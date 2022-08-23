@@ -66,7 +66,5 @@ class MNISTDataSet:
             dtype=torch.float,
         )
         if self.flat_input:
-            input = np.insert(
-                np.reshape(input.numpy(), (56 * 56)), 0, self.start_token
-            )
+            input = np.insert(np.reshape(input.numpy(), (56 * 56)), 0, self.start_token)
         return {"input": input, "target": target}
