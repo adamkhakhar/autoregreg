@@ -57,7 +57,7 @@ class MNISTDataSet:
         tensor_of_tensor_of_tensors = tensor_of_tensors.reshape(
             1, samples[0].shape[2] * 2, samples[0].shape[2] * 2
         )
-        sample = tensor_of_tensor_of_tensors
+        input = tensor_of_tensor_of_tensors
 
         # create targets from input
         target_lst = [foo(x) for foo in self.target_fun]
@@ -66,7 +66,7 @@ class MNISTDataSet:
             dtype=torch.float,
         )
         if self.flat_input:
-            sample = np.insert(
-                np.reshape(sample.numpy(), (56 * 56)), 0, self.start_token
+            input = np.insert(
+                np.reshape(input.numpy(), (56 * 56)), 0, self.start_token
             )
-        return {"sample": sample, "target": target}
+        return {"input": input, "target": target}

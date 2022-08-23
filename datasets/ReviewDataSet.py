@@ -45,7 +45,7 @@ class ReviewDataSet:
         ]
 
         # ensure all input to model are of curr_max_size (largest size of batch)
-        sample = np.concatenate(
+        input = np.concatenate(
             (
                 self.start_token,
                 curr_review,
@@ -61,7 +61,7 @@ class ReviewDataSet:
             dtype=torch.float,
         )
         self.curr_shard_ind += 1
-        return {"sample": sample, "target": target}
+        return {"input": input, "target": target}
 
     def get_shard(self):
         ind = random.randint(0, self.max_key)
