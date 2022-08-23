@@ -10,16 +10,17 @@ import utils.utils as utils
 
 class Train:
     """
-    Class used to implement the functions of the neural network. Is called by train method in
-    base_model_runner.
+    Class used to implement the training of a neural network.
 
     ...
     Methods
     -------
-    instantiate(start_time):
-        Creates model, train loader, and optimizer
     calculate_loss(outputs, targets):
         Calculates loss of a minibatch
+    compute_mini_batch_metrics(
+        inputs, outputs, targets, out_of_sample_input, out_of_sample_target
+    ):
+        Compute metrics every minibatch used in iteration_update.
     iteration_update(i, features, outputs, targets, loss):
         Is called every minibatch. Used for logging.
     save_state(loss):
@@ -31,6 +32,9 @@ class Train:
     def __init__(
         self,
         experiment_name,
+        model,
+        data_loader,
+        optimizer,
         device,
         log_every,
         num_grad_steps,
@@ -40,6 +44,9 @@ class Train:
     ):
         # variables from parameters
         self.experiment_name = experiment_name
+        self.model = model
+        self.data_loader = (data_loader,)
+        self.optimizer = optimizer
         self.device = device
         self.log_every = log_every
         self.num_grad_steps = num_grad_steps
@@ -52,21 +59,6 @@ class Train:
         self.train_loss_lst = []
         self.start_time = None
         self.train_time_lst = []
-
-    def instantiate(self, start_time):
-        """Creates model, data loader, and optimizer
-
-        Parameters
-        ----------
-        start_time : float
-            time that train method was started
-
-        Returns
-        -------
-        tuple
-            model, data_loader, optimizer
-        """
-        raise NotImplementedError
 
     def calculate_loss(self, outputs, targets):
         """Calculates loss of a minibatch
@@ -141,7 +133,7 @@ class Train:
                 experiment_data,
             )
 
-    def iteration_update(self, i, inputs, outputs, targets, loss, data_loader, model):
+    def iteration_update(self, i, inputs, outputs, targets, loss):
         """Is called every minibatch. Used for logging.
 
         Parameters
@@ -160,12 +152,6 @@ class Train:
 
         loss : tensor
             current loss of model
-
-        data_loader : torch dataloader
-            data loader for model
-
-        model : nn.Module
-            PyTorch model
         """
         with torch.no_grad():
             self.curr_loss += loss.item()
@@ -175,7 +161,7 @@ class Train:
                 scaled_curr_loss = self.curr_loss / self.log_every
                 self.train_loss_lst.append(scaled_curr_loss)
                 self.train_time_lst.append(time.time() - self.start_time)
-                out_of_sample_data = next(iter(data_loader))
+                out_of_sample_data = next(iter(self.data_loader))
                 out_of_sample_input = out_of_sample_data["input"].to(self.device)
                 out_of_sample_target = out_of_sample_data["target"].to(self.device)
 
@@ -203,20 +189,19 @@ class Train:
         """
         Trains model using base_model_runner train method
         """
-        start_time = time.time()
-        model, data_loader, optimizer = self.instantiate(start_time)
-        for i, data in enumerate(data_loader, 0):
+        self.start_time = time.time()
+        for i, data in enumerate(self.data_loader, 0):
             if self.print_every:
-                print(i, int(time.time() - start_time), flush=True)
+                print(i, int(time.time() - self.start_time), flush=True)
             inputs = data["input"].to(self.device)
             targets = data["target"].to(self.device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
+            self.optimizer.zero_grad()
+            outputs = self.model(inputs)
             loss = self.calculate_loss(outputs, targets)
             loss.backward()
-            optimizer.step()
+            self.optimizer.step()
             with torch.no_grad():
                 self.iteration_update(
-                    i, inputs, outputs, targets, loss, data_loader, model
+                    i, inputs, outputs, targets, loss, self.data_loader, self.model
                 )
-        self.save_state(loss, model, optimizer)
+        self.save_state(loss)
