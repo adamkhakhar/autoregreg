@@ -45,7 +45,7 @@ class Train:
         # variables from parameters
         self.experiment_name = experiment_name
         self.model = model
-        self.data_loader = (data_loader,)
+        self.data_loader = data_loader
         self.optimizer = optimizer
         self.device = device
         self.log_every = log_every
