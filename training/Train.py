@@ -8,7 +8,7 @@ sys.path.append(f"{ROOT_DIR}/utils")
 import utils.utils as utils
 
 
-class Model:
+class Train:
     """
     Class used to implement the functions of the neural network. Is called by train method in
     base_model_runner.
