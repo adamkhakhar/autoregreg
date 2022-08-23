@@ -108,7 +108,7 @@ class Train:
         raise NotImplementedError
 
     def save_state(self, loss, model, optimizer):
-        """Saves state of model
+        """Saves state of model to s3
 
         Parameters
         ----------
@@ -175,11 +175,12 @@ class Train:
                 )
 
                 # save and print metrics
-                utils.upload_to_s3(
-                    self.bucket_name,
-                    f"{self.experiment_name}_mini_batch_metrics.bin",
-                    mini_batch_metrics,
-                )
+                if self.upload_to_s3:
+                    utils.upload_to_s3(
+                        self.bucket_name,
+                        f"{self.experiment_name}_mini_batch_metrics.bin",
+                        mini_batch_metrics,
+                    )
                 print(
                     f"[{i} / {self.num_grad_steps}] Train Loss: {scaled_curr_loss} | Time {int(time.time() - self.start_time)}"
                 )
@@ -187,7 +188,7 @@ class Train:
 
     def train(self):
         """
-        Trains model using base_model_runner train method
+        Trains model
         """
         self.start_time = time.time()
         for i, data in enumerate(self.data_loader, 0):
@@ -204,4 +205,5 @@ class Train:
                 self.iteration_update(
                     i, inputs, outputs, targets, loss, self.data_loader, self.model
                 )
-        self.save_state(loss)
+        if self.upload_to_s3:
+            self.save_state(loss)
