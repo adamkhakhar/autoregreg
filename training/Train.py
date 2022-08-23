@@ -43,11 +43,11 @@ class Train:
         print_every=False,
     ):
         # variables from parameters
+        self.device = device
         self.experiment_name = experiment_name
-        self.model = model
+        self.model = model.to(self.device)
         self.data_loader = data_loader
         self.optimizer = optimizer
-        self.device = device
         self.log_every = log_every
         self.num_grad_steps = num_grad_steps
         self.print_every = print_every
@@ -173,6 +173,8 @@ class Train:
                     out_of_sample_input,
                     out_of_sample_target,
                 )
+                mini_batch_metrics["train_loss_lst"] = self.train_loss_lst
+                mini_batch_metrics["train_time_lst"] = self.train_time_lst
 
                 # save and print metrics
                 if self.upload_to_s3:
