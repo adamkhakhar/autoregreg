@@ -1,5 +1,4 @@
 import torch.nn as nn
-from typing import List
 
 
 class FeedForward(nn.Module):

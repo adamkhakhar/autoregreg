@@ -29,3 +29,11 @@ def upload_to_s3(bucket_name, key, data):
     pickle.dump(data, bytes)
     bytes.seek(0)
     boto3.client("s3").upload_fileobj(bytes, bucket_name, key)
+
+
+def pull_from_s3(key, bucket_name="arr-saved-experiment-data"):
+    b = io.BytesIO()
+    boto3.client("s3").download_fileobj(bucket_name, key, b)
+    b.seek(0)
+    data = pickle.load(b)
+    return data
