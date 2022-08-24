@@ -26,6 +26,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_layers", dest="num_layers", type=int, default=3)
     parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=1024)
     parser.add_argument(
+        "--seed", dest="seed", type=int, default=np.random.randint(low=1, high=1943)
+    )
+    parser.add_argument(
         "--learning_rate", dest="learning_rate", type=float, default=1e-3
     )
     parser.add_argument("--upload_to_s3", dest="upload_to_s3", type=str, default="T")
@@ -38,6 +41,10 @@ if __name__ == "__main__":
     args.upload_to_s3 = args.upload_to_s3 == "T"
     args.print_every = args.print_every == "T"
     print(args, flush=True)
+
+    # set seed
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
     # construct dataloader
     input_fun = [lambda: np.random.uniform(low=0, high=1)]
