@@ -31,13 +31,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learning_rate", dest="learning_rate", type=float, default=1e-3
     )
+    parser.add_argument("--save_local", dest="save_local", type=str, default="F")
     parser.add_argument("--upload_to_s3", dest="upload_to_s3", type=str, default="T")
     parser.add_argument("--print_every", dest="print_every", type=str, default="F")
     args = parser.parse_args()
 
     # Convert boolean vars in to boolean
+    assert args.save_local in ["T", "F"]
     assert args.upload_to_s3 in ["T", "F"]
     assert args.print_every in ["T", "F"]
+    args.save_local = args.save_local == "T"
     args.upload_to_s3 = args.upload_to_s3 == "T"
     args.print_every = args.print_every == "T"
     print(args, flush=True)
@@ -47,8 +50,11 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
 
     # construct dataloader
-    input_fun = [lambda: np.random.uniform(low=0, high=1)]
-    target_fun = [lambda x: x]
+    input_fun = [
+        lambda: np.random.uniform(low=0, high=1),
+        lambda: np.random.uniform(low=0, high=1),
+    ]
+    target_fun = [lambda x: x**2, lambda x: x**3]
     data_loader = torch.utils.data.DataLoader(
         OneDimDataSet(input_fun, target_fun, args.num_samples),
         batch_size=args.batch_size,
@@ -56,7 +62,7 @@ if __name__ == "__main__":
     )
 
     # construct model
-    model = FeedForward(1, len(input_fun), args.num_layers, args.layer_dim)
+    model = FeedForward(len(input_fun), len(input_fun), args.num_layers, args.layer_dim)
 
     # construct optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
@@ -71,6 +77,7 @@ if __name__ == "__main__":
         args.gpu_ind,
         args.log_every,
         args.num_samples // args.batch_size,
+        save_local=args.save_local,
         upload_to_s3=args.upload_to_s3,
         bucket_name="arr-saved-experiment-data",
         print_every=args.print_every,

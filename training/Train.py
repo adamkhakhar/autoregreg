@@ -38,6 +38,7 @@ class Train:
         device,
         log_every,
         num_grad_steps,
+        save_local=False,
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",
         print_every=False,
@@ -51,6 +52,7 @@ class Train:
         self.log_every = log_every
         self.num_grad_steps = num_grad_steps
         self.print_every = print_every
+        self.save_local = save_local
         self.upload_to_s3 = upload_to_s3
         self.bucket_name = bucket_name
 
@@ -107,7 +109,7 @@ class Train:
         """
         raise NotImplementedError
 
-    def save_state(self, loss, model, optimizer):
+    def save_state(self, loss):
         """Saves state of model to s3
 
         Parameters
@@ -123,13 +125,18 @@ class Train:
         """
         experiment_data = {
             "loss": loss,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
         }
         if self.upload_to_s3:
             utils.upload_to_s3(
                 self.bucket_name,
                 f"{self.experiment_name}_experiment_data.bin",
+                experiment_data,
+            )
+        if self.save_local:
+            utils.store_data(
+                f"{ROOT_DIR}/results/{self.experiment_name}_experiment_data.bin",
                 experiment_data,
             )
 
@@ -183,6 +190,11 @@ class Train:
                         f"{self.experiment_name}_mini_batch_metrics.bin",
                         mini_batch_metrics,
                     )
+                if self.save_local:
+                    utils.store_data(
+                        f"{ROOT_DIR}/results/{self.experiment_name}_mini_batch_metrics.bin",
+                        mini_batch_metrics,
+                    )
                 print(
                     f"[{i} / {self.num_grad_steps}] Train Loss: {scaled_curr_loss} | Time {int(time.time() - self.start_time)}"
                 )
@@ -205,12 +217,7 @@ class Train:
             loss.backward()
             self.optimizer.step()
             with torch.no_grad():
-                self.iteration_update(
-                    i, inputs, outputs, targets, loss, self.data_loader, self.model
-                )
+                self.iteration_update(i, inputs, outputs, targets, loss)
         print(f"[Logging] Finished training {self.experiment_name}")
-        if self.upload_to_s3:
-            print(
-                f"[Logging] Uploading to s3 {self.experiment_name}, {self.bucket_name}"
-            )
-            self.save_state(loss)
+        print(f"[Logging] Saving state {self.experiment_name}, {self.bucket_name}")
+        self.save_state(loss)

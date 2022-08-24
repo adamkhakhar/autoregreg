@@ -20,6 +20,7 @@ class MSETrain(Train):
         gpu_ind: int,
         log_every: int,
         num_grad_steps: int,
+        save_local=False,
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",
         print_every=False,
@@ -36,6 +37,7 @@ class MSETrain(Train):
         self.log_every = log_every
         self.num_grad_steps = num_grad_steps
         self.print_every = print_every
+        self.save_local = save_local
         self.upload_to_s3 = upload_to_s3
         self.bucket_name = bucket_name
 
@@ -47,6 +49,7 @@ class MSETrain(Train):
             self.device,
             self.log_every,
             self.num_grad_steps,
+            save_local=save_local,
             upload_to_s3=self.upload_to_s3,
             bucket_name=self.bucket_name,
             print_every=self.print_every,
