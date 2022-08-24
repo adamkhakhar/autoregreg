@@ -6,27 +6,28 @@ import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(f"{ROOT_DIR}/utils")
-import utils.utils as utils
-import training.Train as Train
+from training.Train import Train
 
 
 class MSETrain(Train):
     def __init__(
         self,
-        experiment_name,
-        number_targets,
+        experiment_name: str,
+        number_targets: int,
         model,
         data_loader,
         optimizer,
-        device,
-        log_every,
-        num_grad_steps,
+        gpu_ind: int,
+        log_every: int,
+        num_grad_steps: int,
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",
         print_every=False,
     ):
         # variables from parameters
-        self.device = f"cuda:{device}" if torch.cuda.is_available() else "cpu"
+        self.device = (
+            f"cuda:{gpu_ind}" if torch.cuda.is_available() and gpu_ind >= 0 else "cpu"
+        )
         self.experiment_name = experiment_name
         self.number_targets = number_targets
         self.model = model.to(self.device)

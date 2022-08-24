@@ -5,7 +5,7 @@ import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(f"{ROOT_DIR}/utils")
-import utils.utils as utils
+import utils
 
 
 class Train:
@@ -192,6 +192,7 @@ class Train:
         """
         Trains model
         """
+        print(f"[Logging] Begin training {self.experiment_name}...")
         self.start_time = time.time()
         for i, data in enumerate(self.data_loader, 0):
             if self.print_every:
@@ -207,5 +208,9 @@ class Train:
                 self.iteration_update(
                     i, inputs, outputs, targets, loss, self.data_loader, self.model
                 )
+        print(f"[Logging] Finished training {self.experiment_name}")
         if self.upload_to_s3:
+            print(
+                f"[Logging] Uploading to s3 {self.experiment_name}, {self.bucket_name}"
+            )
             self.save_state(loss)
