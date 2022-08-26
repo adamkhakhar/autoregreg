@@ -210,7 +210,9 @@ class Train:
             if self.print_every:
                 print(i, int(time.time() - self.start_time), flush=True)
             inputs = data["input"].to(self.device)
-            targets = data["target"].to(self.device)
+            targets = data["target"]
+            if type(targets) == torch.Tensor:
+                targets = data["target"].to(self.device)
             self.optimizer.zero_grad()
             outputs = self.model(inputs)
             loss = self.calculate_loss(outputs, targets)
