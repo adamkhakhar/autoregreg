@@ -3,6 +3,7 @@ import torch.nn as nn
 import os
 import sys
 from typing import List
+import numpy as np
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(f"{ROOT_DIR}/utils")
@@ -102,9 +103,11 @@ class ARRTrain(Train):
                 )
         return loss
 
-    def _tensor_arg_max_to_mse(
-        self, tensor_output_arg_max, tensor_target_arg_max, target_index
+    def _l_arg_max_to_mse(
+        self, l_output_arg_max: List, l_target_arg_max: List, target_index
     ):
+        tensor_output_arg_max = torch.stack(l_output_arg_max).T
+        tensor_target_arg_max = torch.stack(l_target_arg_max).T
         assert tensor_output_arg_max.shape == tensor_target_arg_max.shape
         batch_size = tensor_output_arg_max.shape[0]
         output_value = utils.matrix_exponent_notation_to_float(
@@ -120,7 +123,7 @@ class ARRTrain(Train):
             self.exp_max[target_index],
         )
         mse = torch.sum((output_value - target_value) ** 2).item() / batch_size
-        return mse
+        return mse, output_value, target_value
 
     def compute_mini_batch_metrics(
         self, inputs, outputs, targets, out_of_sample_input, out_of_sample_target
@@ -152,14 +155,27 @@ class ARRTrain(Train):
         with torch.no_grad():
             out_of_sample_output = self.model(out_of_sample_input)
             for target_index in range(self.number_targets):
-                for (c_output, c_target, c_dict_to_update) in [
-                    (outputs, targets, self.in_sample_hard_mean_squared_error),
+                for (
+                    c_output,
+                    c_target,
+                    c_hard_dict_to_update,
+                    c_soft_dict_to_update,
+                ) in [
+                    (
+                        outputs,
+                        targets,
+                        self.in_sample_hard_mean_squared_error,
+                        self.in_sample_soft_mean_squared_error,
+                    ),
                     (
                         out_of_sample_output,
                         out_of_sample_target,
                         self.out_of_sample_hard_mean_squared_error,
+                        self.out_of_sample_soft_mean_squared_error,
                     ),
                 ]:
+
+                    # hard error
                     output_logit_arg_max = []
                     target_logit_arg_max = []
                     for bin_index in range(len(c_output[target_index])):
@@ -169,13 +185,47 @@ class ARRTrain(Train):
                         target_logit_arg_max.append(
                             torch.argmax(c_target[target_index][bin_index], dim=1)
                         )
-                    tensor_output_arg_max = torch.stack(output_logit_arg_max).T
-                    tensor_target_arg_max = torch.stack(target_logit_arg_max).T
-                    mse = self._tensor_arg_max_to_mse(
-                        tensor_output_arg_max, tensor_target_arg_max, target_index
+                    hard_mse, _, target_value = self._l_arg_max_to_mse(
+                        output_logit_arg_max, target_logit_arg_max, target_index
                     )
-                    c_dict_to_update[target_index].append(mse)
+                    c_hard_dict_to_update[target_index].append(hard_mse)
+
+                    # soft error
+                    output_soft_max = []
+                    for sample_index in range(len(c_output[0][0])):
+                        curr_samples = []
+                        for bin_index in range(len(c_output[target_index])):
+                            soft_max = nn.Softmax(dim=1)(
+                                c_output[target_index][bin_index]
+                            ).tolist()[0]
+                            soft_max_sum = sum(soft_max)
+                            soft_max = [x / soft_max_sum for x in soft_max]
+                            curr_samples.append(
+                                np.random.choice(
+                                    self.bases[target_index],
+                                    self.num_samples_soft_error,
+                                    p=soft_max,
+                                )
+                            )
+                        curr_sample_tensor = torch.Tensor(
+                            np.stack(curr_samples, axis=1)
+                        )
+                        float_values = utils.matrix_exponent_notation_to_float(
+                            curr_sample_tensor,
+                            self.bases[target_index],
+                            self.exp_min[target_index],
+                            self.exp_max[target_index],
+                        )
+                        avg_value = torch.mean(float_values)
+                        output_soft_max.append(avg_value.item())
+                    soft_mse = torch.sum(
+                        (torch.Tensor(output_soft_max) - target_value) ** 2
+                    ).item() / len(output_soft_max)
+                    c_soft_dict_to_update[target_index].append(soft_mse)
+
             return {
                 "in_sample_hard_mean_squared_error": self.in_sample_hard_mean_squared_error,
                 "out_of_sample_hard_mean_squared_error": self.out_of_sample_hard_mean_squared_error,
+                "in_sample_soft_mean_squared_error": self.in_sample_soft_mean_squared_error,
+                "out_of_sample_soft_mean_squared_error": self.out_of_sample_soft_mean_squared_error,
             }
