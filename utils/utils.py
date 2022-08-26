@@ -3,7 +3,7 @@ import boto3
 import io
 
 
-def float_to_exponent_notation(self, x, base, exp_min, exp_max):
+def float_to_exponent_notation(x, base, exp_min, exp_max):
     x_scaled = int(x * base ** (-1 * exp_min))
     notation = []
     for _ in range(exp_max - exp_min + 1):
