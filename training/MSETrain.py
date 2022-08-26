@@ -4,7 +4,6 @@ import os
 import sys
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(f"{ROOT_DIR}/utils")
 from training.Train import Train
 
 
