@@ -10,8 +10,6 @@ sys.path.append(f"{ROOT_DIR}/utils")
 import utils
 from training.Train import Train
 
-import ipdb
-
 
 class ARRTrain(Train):
     def __init__(
