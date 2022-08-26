@@ -15,7 +15,7 @@ class AutoRegressiveHead(nn.Module):
         self.layers = []
         for target_index in range(self.num_targets):
             curr_target_layers = []
-            for step_index in self.number_steps[target_index]:
+            for step_index in range(self.number_steps[target_index]):
                 curr_target_layers.append(nn.ReLU())
                 curr_target_layers.append(
                     nn.Linear(
@@ -26,17 +26,23 @@ class AutoRegressiveHead(nn.Module):
             self.layers.append(curr_target_layers)
 
     def forward(self, x):
+        """
+        Returns
+        -------
+        list
+            list of outputs for each target, where each output is a list of
+            tensors corresponding to the logits of each bin. # outer lists = #
+            targets, # inner lists = # autoregressive steps
+        """
         outputs = []
         for target_index in range(self.num_targets):
             curr_target_outputs = []
-            prev_output = x
-            for step_index in self.number_steps[target_index]:
-                input_and_prev_steps = torch.concat([prev_output] + curr_target_outputs)
+            for step_index in range(self.number_steps[target_index]):
+                input_and_prev_steps = torch.concat([x] + curr_target_outputs, axis=1)
                 post_relu = self.layers[target_index][step_index * 2](
                     input_and_prev_steps
                 )
                 output = self.layers[target_index][step_index * 2 + 1](post_relu)
                 curr_target_outputs.append(output)
-                prev_output = output
             outputs.append(curr_target_outputs)
         return outputs
