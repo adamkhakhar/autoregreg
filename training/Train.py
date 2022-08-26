@@ -170,7 +170,9 @@ class Train:
                 self.train_time_lst.append(time.time() - self.start_time)
                 out_of_sample_data = next(iter(self.data_loader))
                 out_of_sample_input = out_of_sample_data["input"].to(self.device)
-                out_of_sample_target = out_of_sample_data["target"].to(self.device)
+                out_of_sample_target = out_of_sample_data["target"]
+                if type(targets) == torch.Tensor:
+                    out_of_sample_target = out_of_sample_data["target"].to(self.device)
 
                 # compute metrics
                 mini_batch_metrics = self.compute_mini_batch_metrics(

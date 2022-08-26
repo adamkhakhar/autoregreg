@@ -1,6 +1,7 @@
 import pickle
 import boto3
 import io
+import torch
 
 
 def float_to_exponent_notation(x, base, exp_min, exp_max):
@@ -11,6 +12,28 @@ def float_to_exponent_notation(x, base, exp_min, exp_max):
         x_scaled = int(x_scaled / base)
     notation.reverse()
     return notation
+
+
+def exponent_notation_to_float(l: torch.Tensor, base: int, exp_min: int, exp_max: int):
+    assert len(l) == exp_max - exp_min + 1
+    x = 0
+    curr_exp = exp_max
+    for i in range(len(l)):
+        x += l[i].item() * base ** (curr_exp)
+        curr_exp -= 1
+    return x
+
+
+def matrix_exponent_notation_to_float(
+    m: torch.Tensor, base: int, exp_min: int, exp_max: int
+):
+    exponent_values = torch.stack(
+        [torch.Tensor([base**e for e in range(exp_max, exp_min - 1, -1)])]
+        * m.shape[0]
+    )
+    pre_sum_matrix = m * exponent_values
+    values = torch.sum(pre_sum_matrix, dim=1)
+    return values
 
 
 def store_data(fname, data):

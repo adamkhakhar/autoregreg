@@ -56,8 +56,8 @@ class OneDimDataSet:
                 for bin_ind in range(
                     self.exp_max[target_index] - self.exp_min[target_index] + 1
                 ):
-                    one_hot_tensor = torch.zeros((1, self.bases[target_index]))
-                    one_hot_tensor[0, exponent_notation[bin_ind]] = 1
+                    one_hot_tensor = torch.zeros(self.bases[target_index])
+                    one_hot_tensor[exponent_notation[bin_ind]] = 1
                     current_target_outputs.append(one_hot_tensor)
                 target_output.append(current_target_outputs)
             return {
