@@ -7,9 +7,9 @@ import argparse
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(ROOT_DIR)
 
-from datasets.OneDimDataSet import OneDimDataSet
-from models.FeedForward import FeedForward
-from training.MSETrain import MSETrain
+from src.datasets.OneDimDataSet import OneDimDataSet
+from src.models.FeedForward import FeedForward
+from src.training.MSETrain import MSETrain
 
 
 if __name__ == "__main__":

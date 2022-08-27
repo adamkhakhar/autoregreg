@@ -6,7 +6,7 @@ import sys
 from typing import List
 import random
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/utils")
 import utils
 

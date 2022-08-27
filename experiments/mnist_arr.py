@@ -7,11 +7,11 @@ import argparse
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(ROOT_DIR)
 
-from datasets.MNISTDataSet import MNISTDataSet
-from models.CNN import CNN
-from models.AutoRegressiveHead import AutoRegressiveHead
-from models.EncoderDecoder import EncoderDecoder
-from training.ARRTrain import ARRTrain
+from src.datasets.MNISTDataSet import MNISTDataSet
+from src.models.CNN import CNN
+from src.models.AutoRegressiveHead import AutoRegressiveHead
+from src.models.EncoderDecoder import EncoderDecoder
+from src.training.ARRTrain import ARRTrain
 
 
 if __name__ == "__main__":

@@ -3,8 +3,9 @@ import torch.nn as nn
 import os
 import sys
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-from training.Train import Train
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(f"{ROOT_DIR}/src/training")
+from Train import Train
 
 
 class MSETrain(Train):

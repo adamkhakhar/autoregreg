@@ -7,9 +7,9 @@ import argparse
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(ROOT_DIR)
 
-from datasets.MNISTDataSet import MNISTDataSet
-from models.CNN import CNN
-from training.MSETrain import MSETrain
+from src.datasets.MNISTDataSet import MNISTDataSet
+from src.models.CNN import CNN
+from src.training.MSETrain import MSETrain
 
 
 if __name__ == "__main__":

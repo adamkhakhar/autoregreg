@@ -5,10 +5,12 @@ import sys
 from typing import List
 import numpy as np
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/utils")
 import utils
-from training.Train import Train
+
+sys.path.append(f"{ROOT_DIR}/src/training")
+from Train import Train
 
 
 class ARRTrain(Train):
