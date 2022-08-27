@@ -10,7 +10,7 @@ sys.path.append(ROOT_DIR)
 from datasets.OneDimDataSet import OneDimDataSet
 from models.FeedForward import FeedForward
 from models.AutoRegressiveHead import AutoRegressiveHead
-from models.FeedForwardAutoRegressive import FeedForwardAutoRegressive
+from models.EncoderDecoder import EncoderDecoder
 from training.ARRTrain import ARRTrain
 
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         exp_max[i] - exp_min[i] + 1 for i in range(len(exp_min))
     ]  # number of auto regressive steps for each target
     auto_regressive_head = AutoRegressiveHead(args.layer_dim, bases, number_steps)
-    model = FeedForwardAutoRegressive(feed_forward, auto_regressive_head)
+    model = EncoderDecoder(feed_forward, auto_regressive_head)
 
     # construct optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
