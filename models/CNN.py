@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-class ConvNet(nn.Module):
+class CNN(nn.Module):
     def __init__(self, output_size: int, num_pixels: int, layer_dim: int):
         super().__init__()
         self.cnn_layers = nn.Sequential(
