@@ -1,6 +1,9 @@
 # ignore saved data from experiments
 results/*.bin
 
+# ignore mnist directory
+mnist/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
