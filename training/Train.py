@@ -109,6 +109,22 @@ class Train:
         """
         raise NotImplementedError
 
+    def input_and_target_to_device(self, input, target):
+        """Moves input and target to device
+
+        Parameters
+        ----------
+        input : input from data loader
+
+        target : target from data loader
+
+        Returns
+        -------
+        tuple (input, target)
+            input and target on device
+        """
+        return (input.to(self.device), target.to(self.device))
+
     def save_state(self, loss):
         """Saves state of model to s3
 
@@ -169,10 +185,12 @@ class Train:
                 self.train_loss_lst.append(scaled_curr_loss)
                 self.train_time_lst.append(time.time() - self.start_time)
                 out_of_sample_data = next(iter(self.data_loader))
-                out_of_sample_input = out_of_sample_data["input"].to(self.device)
-                out_of_sample_target = out_of_sample_data["target"]
-                if type(targets) == torch.Tensor:
-                    out_of_sample_target = out_of_sample_data["target"].to(self.device)
+                (
+                    out_of_sample_input,
+                    out_of_sample_target,
+                ) = self.input_and_target_to_device(
+                    out_of_sample_data["input"], out_of_sample_data["target"]
+                )
 
                 # compute metrics
                 mini_batch_metrics = self.compute_mini_batch_metrics(
