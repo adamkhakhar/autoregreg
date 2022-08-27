@@ -46,3 +46,10 @@ class AutoRegressiveHead(nn.Module):
                 curr_target_outputs.append(output)
             outputs.append(curr_target_outputs)
         return outputs
+
+    def move_all_layers_to_device(self, device):
+        for target_index in range(len(self.layers)):
+            for layer_index in range(len(self.layers[target_index])):
+                self.layers[target_index][layer_index] = self.layers[target_index][
+                    layer_index
+                ].to(device)

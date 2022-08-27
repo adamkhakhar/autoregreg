@@ -123,6 +123,25 @@ class ARRTrain(Train):
         mse = torch.sum((output_value - target_value) ** 2).item() / batch_size
         return mse, output_value, target_value
 
+    def input_and_target_to_device(self, input, target):
+        """Moves input and target to device
+
+        Parameters
+        ----------
+        input : input from data loader
+
+        target : target from data loader
+
+        Returns
+        -------
+        tuple (input, target)
+            input and target on device
+        """
+        return (
+            input.to(self.device),
+            [[bin.to(self.device) for bin in t] for t in target],
+        )
+
     def compute_mini_batch_metrics(
         self, inputs, outputs, targets, out_of_sample_input, out_of_sample_target
     ):
