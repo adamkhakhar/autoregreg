@@ -197,10 +197,10 @@ class ARRTrain(Train):
                     target_logit_arg_max = []
                     for bin_index in range(len(c_output[target_index])):
                         output_logit_arg_max.append(
-                            torch.argmax(c_output[target_index][bin_index], dim=1)
+                            torch.argmax(c_output[target_index][bin_index], dim=1).cpu()
                         )
                         target_logit_arg_max.append(
-                            torch.argmax(c_target[target_index][bin_index], dim=1)
+                            torch.argmax(c_target[target_index][bin_index], dim=1).cpu()
                         )
                     hard_mse, _, target_value = self._l_arg_max_to_mse(
                         output_logit_arg_max, target_logit_arg_max, target_index
