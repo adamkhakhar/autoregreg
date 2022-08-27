@@ -12,9 +12,9 @@ class AutoRegressiveHead(nn.Module):
         assert len(bin_size) == len(number_steps)
 
         self.num_targets = len(self.bin_size)
-        self.layers = []
+        self.layers = nn.ModuleList()
         for target_index in range(self.num_targets):
-            curr_target_layers = []
+            curr_target_layers = nn.ModuleList()
             for step_index in range(self.number_steps[target_index]):
                 curr_target_layers.append(nn.ReLU())
                 curr_target_layers.append(
@@ -46,10 +46,3 @@ class AutoRegressiveHead(nn.Module):
                 curr_target_outputs.append(output)
             outputs.append(curr_target_outputs)
         return outputs
-
-    def move_all_layers_to_device(self, device):
-        for target_index in range(len(self.layers)):
-            for layer_index in range(len(self.layers[target_index])):
-                self.layers[target_index][layer_index] = self.layers[target_index][
-                    layer_index
-                ].to(device)

@@ -91,11 +91,7 @@ if __name__ == "__main__":
         exp_max[i] - exp_min[i] + 1 for i in range(len(exp_min))
     ]  # number of auto regressive steps for each target
     auto_regressive_head = AutoRegressiveHead(args.layer_dim, bases, number_steps)
-    auto_regressive_head.move_all_layers_to_device(
-        f"cuda:{args.gpu_ind}"
-        if torch.cuda.is_available() and args.gpu_ind >= 0
-        else "cpu"
-    )
+
     model = EncoderDecoder(feed_forward, auto_regressive_head)
 
     # construct optimizer
