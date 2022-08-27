@@ -2,10 +2,13 @@ import torchvision
 import torch
 import numpy as np
 import os
+import sys
 from typing import List
 import random
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(f"{ROOT_DIR}/utils")
+import utils
 
 
 class MNISTDataSet:
@@ -15,12 +18,14 @@ class MNISTDataSet:
         num_samples: int,
         data_dir=f"{ROOT_DIR}/mnist/files",
         flat_input=False,
-        start_token=None,
+        auto_regressive=False,
+        bases=[],
+        exp_min=[],
+        exp_max=[],
     ):
         self.target_fun = target_fun
         self.num_samples = num_samples
         self.flat_input = flat_input
-        self.start_token = start_token
         self.data_set = torchvision.datasets.MNIST(
             data_dir,
             train=True,
@@ -32,6 +37,13 @@ class MNISTDataSet:
                 ]
             ),
         )
+        self.auto_regressive = auto_regressive
+        self.bases = bases
+        self.exp_min = exp_min
+        self.exp_max = exp_max
+        if auto_regressive:
+            assert len(bases) == len(exp_min)
+            assert len(bases) == len(exp_max)
 
     def __len__(self):
         return self.num_samples
@@ -66,5 +78,27 @@ class MNISTDataSet:
             dtype=torch.float,
         )
         if self.flat_input:
-            input = np.insert(np.reshape(input.numpy(), (56 * 56)), 0, self.start_token)
-        return {"input": input, "target": target}
+            input = torch.Tensor(np.reshape(input.numpy(), (56 * 56)))
+        if not self.auto_regressive:
+            return {"input": input, "target": target}
+        else:
+            target_output = []
+            for target_index in range(len(target)):
+                current_target_outputs = []
+                exponent_notation = utils.float_to_exponent_notation(
+                    target[target_index],
+                    self.bases[target_index],
+                    self.exp_min[target_index],
+                    self.exp_max[target_index],
+                )
+                for bin_ind in range(
+                    self.exp_max[target_index] - self.exp_min[target_index] + 1
+                ):
+                    one_hot_tensor = torch.zeros(self.bases[target_index])
+                    one_hot_tensor[exponent_notation[bin_ind]] = 1
+                    current_target_outputs.append(one_hot_tensor)
+                target_output.append(current_target_outputs)
+            return {
+                "input": input,
+                "target": target_output,
+            }
