@@ -12,6 +12,8 @@ import utils
 sys.path.append(f"{ROOT_DIR}/src/training")
 from Train import Train
 
+import ipdb
+
 
 class ARRTrain(Train):
     def __init__(
@@ -27,7 +29,7 @@ class ARRTrain(Train):
         bases: List[int],
         exp_min: List[int],
         exp_max: List[int],
-        num_samples_soft_error=50,
+        num_samples_error_track=50,
         save_local=False,
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",
@@ -47,7 +49,7 @@ class ARRTrain(Train):
         self.bases = bases
         self.exp_min = exp_min
         self.exp_max = exp_max
-        self.num_samples_soft_error = num_samples_soft_error
+        self.num_samples_error_track = num_samples_error_track
         self.print_every = print_every
         self.save_local = save_local
         self.upload_to_s3 = upload_to_s3
@@ -194,6 +196,15 @@ class ARRTrain(Train):
                     ),
                 ]:
 
+                    # restrict output and targets to be only
+                    for bin_index in range(len(c_output[target_index])):
+                        c_output[target_index][bin_index] = c_output[target_index][
+                            bin_index
+                        ][: self.num_samples_error_track]
+                        c_target[target_index][bin_index] = c_target[target_index][
+                            bin_index
+                        ][: self.num_samples_error_track]
+
                     # hard error
                     output_logit_arg_max = []
                     target_logit_arg_max = []
@@ -222,7 +233,7 @@ class ARRTrain(Train):
                             curr_samples.append(
                                 np.random.choice(
                                     self.bases[target_index],
-                                    self.num_samples_soft_error,
+                                    self.num_samples_error_track,
                                     p=soft_max,
                                 )
                             )
