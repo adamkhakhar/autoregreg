@@ -43,6 +43,7 @@ if __name__ == "__main__":
     args.save_local = args.save_local == "T"
     args.upload_to_s3 = args.upload_to_s3 == "T"
     args.print_every = args.print_every == "T"
+    args.experiment_name += f"_lr_{args.learning_rate}"
     print(args, flush=True)
 
     # set seed
