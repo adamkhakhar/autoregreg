@@ -26,8 +26,12 @@ if __name__ == "__main__":
         "--num_samples", dest="num_samples", type=int, default=1_000_000
     )
     parser.add_argument("--batch_size", dest="batch_size", type=int, default=1_000)
+    parser.add_argument("--num_workers", dest="num_workers", type=int, default=1)
     parser.add_argument(
-        "--num_samples_soft_error", dest="num_samples_soft_error", type=int, default=50
+        "--num_samples_error_track",
+        dest="num_samples_error_track",
+        type=int,
+        default=50,
     )
     parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
     parser.add_argument("--log_every", dest="log_every", type=int, default=1000)
@@ -81,6 +85,7 @@ if __name__ == "__main__":
         ),
         batch_size=args.batch_size,
         pin_memory=torch.cuda.is_available(),
+        num_workers=args.num_workers,
     )
 
     # construct model
@@ -110,7 +115,7 @@ if __name__ == "__main__":
         bases,
         exp_min,
         exp_max,
-        num_samples_soft_error=args.num_samples_soft_error,
+        num_samples_error_track=args.num_samples_error_track,
         save_local=args.save_local,
         upload_to_s3=args.upload_to_s3,
         bucket_name="arr-saved-experiment-data",
