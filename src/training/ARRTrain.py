@@ -29,7 +29,7 @@ class ARRTrain(Train):
         bases: List[int],
         exp_min: List[int],
         exp_max: List[int],
-        num_samples_error_track=50,
+        num_samples_error_track=100,
         save_local=False,
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",

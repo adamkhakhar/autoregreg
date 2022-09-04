@@ -31,7 +31,7 @@ if __name__ == "__main__":
         "--num_samples_error_track",
         dest="num_samples_error_track",
         type=int,
-        default=50,
+        default=100,
     )
     parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
     parser.add_argument("--log_every", dest="log_every", type=int, default=1000)
