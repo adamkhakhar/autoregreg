@@ -216,7 +216,7 @@ class Train:
                         mini_batch_metrics,
                     )
                 print(
-                    f"[{i} / {self.num_grad_steps}] Train Loss: {scaled_curr_loss} | Time {int(time.time() - self.start_time)}"
+                    f"[{i} / {self.num_grad_steps}] Train Loss: {scaled_curr_loss} | Time {int(time.time() - self.start_time)}", flush=True
                 )
                 self.curr_loss = 0
 
@@ -240,5 +240,5 @@ class Train:
             with torch.no_grad():
                 self.iteration_update(i, inputs, outputs, targets, loss)
         print(f"[Logging] Finished training {self.experiment_name}")
-        print(f"[Logging] Saving state {self.experiment_name}, {self.bucket_name}")
+        print(f"[Logging] Saving state {self.experiment_name}, {self.bucket_name}", flush=True)
         self.save_state(loss)
