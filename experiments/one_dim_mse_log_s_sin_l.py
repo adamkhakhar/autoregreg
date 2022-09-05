@@ -6,10 +6,12 @@ import argparse
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(ROOT_DIR)
+sys.path.append(ROOT_DIR + "/utils")
 
 from src.datasets.OneDimDataSet import OneDimDataSet
 from src.models.FeedForward import FeedForward
 from src.training.MSETrain import MSETrain
+from target_functions import log_small, sin_large
 
 
 if __name__ == "__main__":
@@ -56,7 +58,7 @@ if __name__ == "__main__":
         lambda: np.random.uniform(low=0, high=1),
         lambda: np.random.uniform(low=0, high=1),
     ]
-    target_fun = [lambda x: x**2, lambda x: x**3]
+    target_fun = [log_small, sin_large]
     data_loader = torch.utils.data.DataLoader(
         OneDimDataSet(input_fun, target_fun, args.num_samples),
         batch_size=args.batch_size,
