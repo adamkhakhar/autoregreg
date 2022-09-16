@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import argparse
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ROOT_DIR)
 sys.path.append(ROOT_DIR + "/utils")
 
