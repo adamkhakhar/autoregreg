@@ -19,6 +19,7 @@ if __name__ == "__main__":
         "--num_samples", dest="num_samples", type=int, default=1_000_000
     )
     parser.add_argument("--batch_size", dest="batch_size", type=int, default=100)
+    parser.add_argument("--num_workers", dest="num_workers", type=int, default=1)
     parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
     parser.add_argument("--log_every", dest="log_every", type=int, default=10_000)
     parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=1024)
@@ -52,6 +53,7 @@ if __name__ == "__main__":
         MNISTDataSet(target_fun, args.num_samples),
         batch_size=args.batch_size,
         pin_memory=torch.cuda.is_available(),
+        num_workers=args.num_workers,
     )
 
     # construct model
