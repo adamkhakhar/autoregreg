@@ -106,7 +106,7 @@ if __name__ == "__main__":
         bases,
         exp_min,
         exp_max,
-        num_samples_soft_error=args.num_samples_soft_error,
+        num_samples_error_track=args.num_samples_soft_error,
         save_local=args.save_local,
         upload_to_s3=args.upload_to_s3,
         bucket_name="arr-saved-experiment-data",
