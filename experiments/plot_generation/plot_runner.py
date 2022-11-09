@@ -19,8 +19,8 @@ ARR_METRIC = "out_of_sample_hard_mean_squared_error"
 labels = ["Mean Squared Error", "Mean Absolute Error", "Autoregressive"]
 colors = [MSE_COLOR, MAE_COLOR, ARR_COLOR]
 
-GENERATE_ONE_DIM_PLOTS = False
-GENERATE_MNIST_PLOTS = False
+GENERATE_ONE_DIM_PLOTS = True
+GENERATE_MNIST_PLOTS = True
 GENERATE_LEGEND = True
 
 if GENERATE_ONE_DIM_PLOTS:
@@ -226,17 +226,20 @@ if GENERATE_MNIST_PLOTS:
         x_axis_label=x_axis_label,
         y_axis_label=y_axis_label,
     )
+    del MSE_mnist_error
+    del MAE_mnist_error
+    del ARR_mnist_error
 
     # mnist smaller targer error | sin s log l
     MSE_mnist_error = utils.pull_from_s3(
         f"mnist_mse_sin_s_log_l_lr_0.005_seed_1_mini_batch_metrics.bin"
     )[MSE_METRIC]
-    MAE_one_dim_error = utils.pull_from_s3(
+    MAE_mnist_error = utils.pull_from_s3(
         f"mnist_mae_sin_s_log_l_lr_0.005_seed_1_mini_batch_metrics.bin"
     )[MAE_METRIC]
     for i in range(len(MAE_mnist_error)):
         MAE_mnist_error[i] = np.square(MAE_mnist_error[i]) * MNIST_MAE_BATCH_SIZE
-    ARR_one_dim_error = utils.pull_from_s3(
+    ARR_mnist_error = utils.pull_from_s3(
         f"mnist_arr_sin_s_log_l_base_100_expmin_-3_expmax_4_lr_0.0005_seed_10_mini_batch_metrics.bin"
     )[ARR_METRIC]
 
@@ -276,17 +279,20 @@ if GENERATE_MNIST_PLOTS:
         y_axis_label=y_axis_label,
     )
 
-    # mnist smaller targer error | sin s log l
+    del MSE_mnist_error
+    del MAE_mnist_error
+    del ARR_mnist_error
+    # mnist smaller targer error | sin s log s
     MSE_mnist_error = utils.pull_from_s3(
-        f"mnist_mse_sin_s_log_s_lr_0.0001_seed_1_mini_batch_metrics.bin"
+        f"mnist_mse_sin_s_log_s_lr_0.0001_seed_5_mini_batch_metrics.bin"
     )[MSE_METRIC]
-    MAE_one_dim_error = utils.pull_from_s3(
+    MAE_mnist_error = utils.pull_from_s3(
         f"mnist_mae_sin_s_log_s_lr_0.0001_seed_1_mini_batch_metrics.bin"
     )[MAE_METRIC]
     for i in range(len(MAE_mnist_error)):
         MAE_mnist_error[i] = np.square(MAE_mnist_error[i]) * MNIST_MAE_BATCH_SIZE
-    ARR_one_dim_error = utils.pull_from_s3(
-        f"mnist_arr_sin_s_log_s_base_100_expmin_-3_expmax_4_lr_0.0005_seed_10_mini_batch_metrics.bin"
+    ARR_mnist_error = utils.pull_from_s3(
+        f"mnist_arr_sin_s_log_s_base_100_expmin_-3_expmax_4_lr_0.0005_seed_5_mini_batch_metrics.bin"
     )[ARR_METRIC]
 
     x = []
