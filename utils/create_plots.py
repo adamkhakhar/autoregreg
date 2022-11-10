@@ -22,13 +22,9 @@ def single_y_plot(
     tick_size=12,
     label_size=15,
     save_every_xth_ytick=1,
-    figsize=None,
 ):
     assert len(x) == len(y)
     _, ax = plt.subplots()
-    # if figsize != None:
-    #     print(figsize)
-    #     plt.figure(figsize=figsize)
     ax.spines["top"].set_color((0.8, 0.8, 0.8))
     ax.spines["right"].set_color((0.8, 0.8, 0.8))
     plt.xlabel(x_axis_label)
