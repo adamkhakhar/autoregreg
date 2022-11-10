@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", dest="batch_size", type=int, default=400)
     parser.add_argument("--num_workers", dest="num_workers", type=int, default=0)
     parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
-    parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=1024)
+    parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=512)
     parser.add_argument("--ntoken", dest="ntoken", type=int, default=10_002)
     parser.add_argument("--input_size", dest="input_size", type=int, default=500)
     parser.add_argument("--d_model", dest="d_model", type=int, default=128)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
 
     # construct dataloader
-    target_fun = [lambda x: x["rating"] / 5]
+    target_fun = [lambda x: x["rating"] / 5, lambda x: x["num_char"]]
     data_loader = torch.utils.data.DataLoader(
         ReviewDataSet(
             target_fun,

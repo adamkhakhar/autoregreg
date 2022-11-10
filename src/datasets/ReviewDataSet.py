@@ -68,7 +68,7 @@ class ReviewDataSet:
         self.curr_shard_ind += 1
         return {
             "input": torch.tensor(input, dtype=torch.int),
-            "target": torch.tensor(target, dtype=torch.float),
+            "target": target,
         }
 
     def get_shard(self):
