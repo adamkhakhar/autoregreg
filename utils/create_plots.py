@@ -21,11 +21,14 @@ def single_y_plot(
     legend=False,
     tick_size=12,
     label_size=15,
-    num_yaxis_ticks=6,
-    save_every_xth_ytick=2,
+    save_every_xth_ytick=1,
+    figsize=None,
 ):
     assert len(x) == len(y)
     _, ax = plt.subplots()
+    # if figsize != None:
+    #     print(figsize)
+    #     plt.figure(figsize=figsize)
     ax.spines["top"].set_color((0.8, 0.8, 0.8))
     ax.spines["right"].set_color((0.8, 0.8, 0.8))
     plt.xlabel(x_axis_label)
@@ -49,9 +52,9 @@ def single_y_plot(
     if legend:
         plt.legend()
     if y_axis_exp:
-        plt.yscale("symlog")
+        plt.yscale("log")
     if x_axis_exp:
-        plt.xscale("symlog")
+        plt.xscale("log")
 
     # tweak the axis labels
     xlab = ax.xaxis.get_label()
@@ -68,13 +71,14 @@ def single_y_plot(
     # tweak ticks
     plt.xticks(fontsize=tick_size)
     plt.yticks(fontsize=tick_size)
-    ax.set_yticks(
-        [
-            ax.get_yticks()[i]
-            for i in range(len(ax.get_yticks()))
-            if i % save_every_xth_ytick == 0
-        ]
-    )
+    if save_every_xth_ytick != 1:
+        ax.set_yticks(
+            [
+                ax.get_yticks()[i]
+                for i in range(len(ax.get_yticks()))
+                if i % save_every_xth_ytick == 0
+            ]
+        )
 
     plt.tight_layout()
     plt.grid(linestyle="--", alpha=0.25)
