@@ -4,6 +4,13 @@ results/*.bin
 # ignore mnist directory
 mnist/
 
+#ignore generated plots
+experiments/plot_generation/*.png
+experiments/plot_generation/mnist_plots
+experiments/plot_generation/one_dim_plots
+experiments/*/*.png
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
