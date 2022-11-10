@@ -10,9 +10,9 @@ sys.path.append(ROOT + "/utils")
 from create_plots import single_y_plot
 import utils
 
-MSE_COLOR = "royalblue"
-MAE_COLOR = "darkblue"
-ARR_COLOR = "darkred"
+MSE_COLOR = "darkred"
+MAE_COLOR = "coral"
+ARR_COLOR = "royalblue"
 MAE_METRIC = "out_of_sample_error"
 MSE_METRIC = "out_of_sample_mean_squared_error"
 ARR_METRIC = "out_of_sample_hard_mean_squared_error"
