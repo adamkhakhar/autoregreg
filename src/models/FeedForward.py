@@ -7,6 +7,7 @@ class FeedForward(nn.Module):
     ):
         super().__init__()
         assert num_layers >= 2
+        num_layers -= 2
         self.layers = [nn.Linear(input_size, layer_dim)]
         for _ in range(num_layers):
             self.layers.append(nn.Linear(layer_dim, layer_dim))
