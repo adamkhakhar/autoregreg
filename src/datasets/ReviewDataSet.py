@@ -5,6 +5,14 @@ import io
 import boto3
 import pickle
 from typing import List
+import os
+import sys
+import ipdb
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(f"{ROOT_DIR}/utils")
+
+from utils import pull_from_s3
 
 
 class ReviewDataSet:
@@ -22,7 +30,6 @@ class ReviewDataSet:
         self.bucket_name = bucket_name
         self.num_samples = num_samples
         self.max_key = max_key
-        self.s3 = boto3.client("s3")
         self.start_token = np.array([start_token])
         self.num_samples_per_shard = num_samples_per_shard
         self.num_samples = (
@@ -31,7 +38,6 @@ class ReviewDataSet:
         self.clip_input_size = clip_input_size
         self.curr_shard = None
         self.curr_shard_ind = None
-        self.curr_max_size = None
         self.reset_shard()
 
     def __len__(self):
@@ -43,14 +49,13 @@ class ReviewDataSet:
         curr_review = self.curr_shard[self.curr_shard_ind]["review"][
             : self.clip_input_size
         ]
-
-        # ensure all input to model are of curr_max_size (largest size of batch)
+        # ensure all input to model are of clip_input_size (largest size of input)
         input = np.concatenate(
             (
-                self.start_token,
                 curr_review,
                 np.array(
-                    [self.start_token.item()] * (self.curr_max_size - len(curr_review))
+                    [self.start_token.item()]
+                    * (self.clip_input_size - len(curr_review))
                 ),
             )
         )
@@ -61,19 +66,16 @@ class ReviewDataSet:
             dtype=torch.float,
         )
         self.curr_shard_ind += 1
-        return {"input": input, "target": target}
+        return {
+            "input": torch.tensor(input, dtype=torch.int),
+            "target": torch.tensor(target, dtype=torch.float),
+        }
 
     def get_shard(self):
         ind = random.randint(0, self.max_key)
-        bytes = io.BytesIO()
-        self.s3.download_fileobj(self.bucket_name, str(ind), bytes)
-        bytes.seek(0)
-        return pickle.load(bytes)
+        return pull_from_s3(str(ind), bucket_name=self.bucket_name)
 
     def reset_shard(self):
         del self.curr_shard
         self.curr_shard = self.get_shard()
         self.curr_shard_ind = 0
-        self.curr_max_size = min(
-            max([len(item["review"]) for item in self.curr_shard]), self.clip_input_size
-        )
