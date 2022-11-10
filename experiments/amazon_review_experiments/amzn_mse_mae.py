@@ -11,16 +11,18 @@ sys.path.append(f"{ROOT_DIR}/src/datasets")
 from ReviewDataSet import ReviewDataSet
 from models.Transformer import Transformer
 from training.MSETrain import MSETrain
+from training.MAETrain import MAETrain
 
 import numpy as np
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Amazon Review MSE Transformer Model")
     parser.add_argument("experiment_name", type=str)
+    parser.add_argument("objective", type=str)
     parser.add_argument(
         "--num_samples", dest="num_samples", type=int, default=1_000_000
     )
-    parser.add_argument("--batch_size", dest="batch_size", type=int, default=500)
+    parser.add_argument("--batch_size", dest="batch_size", type=int, default=400)
     parser.add_argument("--num_workers", dest="num_workers", type=int, default=0)
     parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
     parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=1024)
@@ -50,6 +52,8 @@ if __name__ == "__main__":
     assert args.save_local in ["T", "F"]
     assert args.upload_to_s3 in ["T", "F"]
     assert args.print_every in ["T", "F"]
+    args.objective = args.objective.lower()
+    assert args.objective in ["mse", "mae"]
     args.save_local = args.save_local == "T"
     args.upload_to_s3 = args.upload_to_s3 == "T"
     args.print_every = args.print_every == "T"
@@ -92,20 +96,37 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     # construct training
-    training = MSETrain(
-        args.experiment_name,
-        len(target_fun),
-        model,
-        data_loader,
-        optimizer,
-        args.gpu_ind,
-        args.log_every,
-        args.num_samples // args.batch_size,
-        save_local=args.save_local,
-        upload_to_s3=args.upload_to_s3,
-        bucket_name="arr-saved-experiment-data",
-        print_every=args.print_every,
-    )
+    training = None
+    if args.objective == "mse":
+        training = MSETrain(
+            args.experiment_name,
+            len(target_fun),
+            model,
+            data_loader,
+            optimizer,
+            args.gpu_ind,
+            args.log_every,
+            args.num_samples // args.batch_size,
+            save_local=args.save_local,
+            upload_to_s3=args.upload_to_s3,
+            bucket_name="arr-saved-experiment-data",
+            print_every=args.print_every,
+        )
+    elif args.objective == "mae":
+        training = MAETrain(
+            args.experiment_name,
+            len(target_fun),
+            model,
+            data_loader,
+            optimizer,
+            args.gpu_ind,
+            args.log_every,
+            args.num_samples // args.batch_size,
+            save_local=args.save_local,
+            upload_to_s3=args.upload_to_s3,
+            bucket_name="arr-saved-experiment-data",
+            print_every=args.print_every,
+        )
 
     # run training
     training.train()
