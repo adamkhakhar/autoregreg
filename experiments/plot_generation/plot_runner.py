@@ -23,7 +23,7 @@ colors = [MSE_COLOR, MAE_COLOR, ARR_COLOR]
 GENERATE_ONE_DIM_PLOTS = False
 GENERATE_MNIST_PLOTS = False
 GENERATE_LEGEND = False
-GENERATE_LR_SENSITIVITY = False
+GENERATE_LR_SENSITIVITY = True
 
 if GENERATE_ONE_DIM_PLOTS:
     ONE_DIM_MAE_BATCH_SIZE = 10000
@@ -354,6 +354,7 @@ if GENERATE_LEGEND:
 
 if GENERATE_LR_SENSITIVITY:
     print("GENERATE_LR_SENSITIVITY")
+    LR_SENSITIVITY_BATCH_SIZE = 1_000
     # retrieve data
     # y = []
     # for target_scale in ["0.001", "10.0", "1000000000.0"]:
@@ -406,6 +407,8 @@ if GENERATE_LR_SENSITIVITY:
             62430588.0,
         ],
     ]
+    for i in range(len(y)):
+        y[i] = np.square(y[i]) * LR_SENSITIVITY_BATCH_SIZE
     print(x)
     print(y)
     plt.rcParams["figure.figsize"] = (5, 5)

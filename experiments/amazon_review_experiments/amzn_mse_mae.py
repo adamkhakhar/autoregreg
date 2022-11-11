@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_samples", dest="num_samples", type=int, default=1_000_000
     )
-    parser.add_argument("--batch_size", dest="batch_size", type=int, default=400)
+    parser.add_argument("--batch_size", dest="batch_size", type=int, default=512)
     parser.add_argument("--num_workers", dest="num_workers", type=int, default=0)
     parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
     parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=512)
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         "--nlayers_encoder", dest="nlayers_encoder", type=int, default=4
     )
     parser.add_argument(
-        "--nlayers_decoder", dest="nlayers_decoder", type=int, default=4
+        "--nlayers_decoder", dest="nlayers_decoder", type=int, default=3
     )
     parser.add_argument(
         "--seed", dest="seed", type=int, default=np.random.randint(low=1, high=1943)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learning_rate", dest="learning_rate", type=float, default=1e-3
     )
-    parser.add_argument("--log_every", dest="log_every", type=int, default=1_000)
+    parser.add_argument("--log_every", dest="log_every", type=int, default=100)
     parser.add_argument("--save_local", dest="save_local", type=str, default="F")
     parser.add_argument("--upload_to_s3", dest="upload_to_s3", type=str, default="T")
     parser.add_argument("--print_every", dest="print_every", type=str, default="F")
@@ -57,6 +57,9 @@ if __name__ == "__main__":
     args.save_local = args.save_local == "T"
     args.upload_to_s3 = args.upload_to_s3 == "T"
     args.print_every = args.print_every == "T"
+    args.experiment_name += (
+        f"_{args.objective}_lr_{args.learning_rate}_seed_{args.seed}"
+    )
     print(args, flush=True)
 
     # set seed
@@ -64,7 +67,7 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
 
     # construct dataloader
-    target_fun = [lambda x: x["rating"] / 5, lambda x: x["num_char"]]
+    target_fun = [lambda x: x["rating"] / 5, lambda x: x["num_char"] * 1_000]
     data_loader = torch.utils.data.DataLoader(
         ReviewDataSet(
             target_fun,

@@ -134,6 +134,6 @@ class MSETrain(Train):
                     c_dict_to_update[i].append(mse)
 
             return {
-                "in_sample_mean_squared_error": self.in_sample_mean_squared_error,
-                "out_of_sample_mean_squared_error": self.out_of_sample_mean_squared_error,
+                "in_sample_error": self.in_sample_mean_squared_error,
+                "out_of_sample_error": self.out_of_sample_mean_squared_error,
             }
