@@ -12,7 +12,7 @@ import ipdb
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/utils")
 
-from utils import pull_from_s3
+from utils import pull_from_s3, float_to_exponent_notation
 
 
 class ReviewDataSet:
@@ -25,6 +25,7 @@ class ReviewDataSet:
         start_token=10,
         num_samples_per_shard=1_024,
         clip_input_size=2000,
+        arr=None,
     ):
         self.target_fun = target_fun
         self.bucket_name = bucket_name
@@ -35,6 +36,15 @@ class ReviewDataSet:
         self.num_samples = (
             max_key * num_samples_per_shard if num_samples is None else num_samples
         )
+
+        self.arr = arr
+        if arr is not None:
+            for key in ["base", "exp_min", "exp_max"]:
+                assert key in self.arr
+            for i in range(len(arr["base"])):
+                assert arr["base"][i] > 0
+                assert arr["exp_min"][i] <= arr["exp_max"][i]
+
         self.clip_input_size = clip_input_size
         self.curr_shard = None
         self.curr_shard_ind = None
@@ -50,14 +60,17 @@ class ReviewDataSet:
             : self.clip_input_size
         ]
         # ensure all input to model are of clip_input_size (largest size of input)
-        input = np.concatenate(
-            (
-                curr_review,
-                np.array(
-                    [self.start_token.item()]
-                    * (self.clip_input_size - len(curr_review))
-                ),
-            )
+        input = torch.tensor(
+            np.concatenate(
+                (
+                    curr_review,
+                    np.array(
+                        [self.start_token.item()]
+                        * (self.clip_input_size - len(curr_review))
+                    ),
+                )
+            ),
+            dtype=torch.int,
         )
 
         # generate target from target functions
@@ -66,10 +79,34 @@ class ReviewDataSet:
             dtype=torch.float,
         )
         self.curr_shard_ind += 1
-        return {
-            "input": torch.tensor(input, dtype=torch.int),
-            "target": target,
-        }
+        if self.arr is None:
+            return {
+                "input": input,
+                "target": target,
+            }
+        else:
+            target_output = []
+            for target_index in range(len(target)):
+                current_target_outputs = []
+                exponent_notation = float_to_exponent_notation(
+                    target[target_index],
+                    self.arr["base"][target_index],
+                    self.arr["exp_min"][target_index],
+                    self.arr["exp_max"][target_index],
+                )
+                for bin_ind in range(
+                    self.arr["exp_max"][target_index]
+                    - self.arr["exp_min"][target_index]
+                    + 1
+                ):
+                    one_hot_tensor = torch.zeros(self.arr["base"][target_index])
+                    one_hot_tensor[exponent_notation[bin_ind]] = 1
+                    current_target_outputs.append(one_hot_tensor)
+                target_output.append(current_target_outputs)
+            return {
+                "input": input,
+                "target": target_output,
+            }
 
     def get_shard(self):
         ind = random.randint(0, self.max_key)
