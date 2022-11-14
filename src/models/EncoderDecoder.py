@@ -11,3 +11,9 @@ class EncoderDecoder(nn.Module):
         encoder_output = self.encoder(x)
         decoder_output = self.decoder(encoder_output)
         return decoder_output
+
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs)
+        self.encoder = self.encoder.to(*args, **kwargs)
+        self.decoder = self.decoder.to(*args, **kwargs)
+        return self
