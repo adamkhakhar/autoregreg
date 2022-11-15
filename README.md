@@ -1,5 +1,5 @@
 # Deep Autoregressive Regression
-Adam Khakhar and Jacob Buckman
+Adam Khakhar and Jacob Buckman\
 [Paper](https://arxiv.org/abs/2211.07447)
 Citation Information:
 ```
