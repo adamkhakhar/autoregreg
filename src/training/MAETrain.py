@@ -88,7 +88,14 @@ class MAETrain(Train):
         return loss
 
     def compute_mini_batch_metrics(
-        self, inputs, outputs, targets, out_of_sample_input, out_of_sample_target
+        self,
+        inputs,
+        outputs,
+        targets,
+        out_of_sample_input,
+        out_of_sample_target,
+        in_sample_distribution_ind,
+        out_of_sample_distribution_ind,
     ):
         """Calculates loss of a minibatch
 
@@ -109,6 +116,12 @@ class MAETrain(Train):
         out_of_sample_target : tensor
             targets of out of sample mini batch
 
+        in_sample_distribution_ind : List[int]
+            index of target distribution sampled from
+
+        out_of_sample_distribution_ind: List[int]
+            index of target distribution sampled from
+
         Returns
         -------
         dict
@@ -116,24 +129,60 @@ class MAETrain(Train):
         """
         with torch.no_grad():
             out_of_sample_output = self.model(out_of_sample_input)
-            for i in range(self.number_targets):
-                for (c_output, c_target, c_dict_to_update) in [
-                    (outputs, targets, self.in_sample_error),
-                    (
-                        out_of_sample_output,
-                        out_of_sample_target,
-                        self.out_of_sample_error,
-                    ),
-                ]:
-                    curr_output = c_output[:, i]
-                    curr_target = c_target[:, i]
-                    mae = nn.L1Loss()(
-                        curr_output.reshape(curr_output.shape[0], 1),
-                        curr_target.reshape(curr_target.shape[0], 1),
-                    ).item()
-                    c_dict_to_update[i].append(mae)
+            if in_sample_distribution_ind is None:
+                for i in range(self.number_targets):
+                    for (c_output, c_target, c_dict_to_update) in [
+                        (outputs, targets, self.in_sample_mean_squared_error),
+                        (
+                            out_of_sample_output,
+                            out_of_sample_target,
+                            self.out_of_sample_mean_squared_error,
+                        ),
+                    ]:
+                        curr_output = c_output[:, i]
+                        curr_target = c_target[:, i]
+                        mae = nn.L1Loss()(
+                            curr_output.reshape(curr_output.shape[0], 1),
+                            curr_target.reshape(curr_target.shape[0], 1),
+                        ).item()
+                        c_dict_to_update[i].append(mae)
 
-            return {
-                "in_sample_error": self.in_sample_error,
-                "out_of_sample_error": self.out_of_sample_error,
-            }
+                return {
+                    "in_sample_error": self.in_sample_mean_squared_error,
+                    "out_of_sample_error": self.out_of_sample_mean_squared_error,
+                }
+            else:
+                if self.num_distributions is None:
+                    self.num_distributions = max(in_sample_distribution_ind) + 1
+                    for i in range(self.num_distributions):
+                        self.in_sample_mean_squared_error[i] = []
+                        self.out_of_sample_mean_squared_error[i] = []
+                for distribution_index in range(self.num_distributions):
+                    for (c_output, c_target, distribution_ind, c_dict_to_update) in [
+                        (
+                            outputs,
+                            targets,
+                            in_sample_distribution_ind,
+                            self.in_sample_mean_squared_error,
+                        ),
+                        (
+                            out_of_sample_output,
+                            out_of_sample_target,
+                            out_of_sample_distribution_ind,
+                            self.out_of_sample_mean_squared_error,
+                        ),
+                    ]:
+                        mask = distribution_ind == distribution_index
+                        indices = torch.nonzero(mask)
+                        curr_output = c_output[indices, 0]
+                        curr_target = c_target[indices, 0]
+                        mae = nn.L1Loss()(
+                            curr_output.reshape(curr_output.shape[0], 1),
+                            curr_target.reshape(curr_target.shape[0], 1),
+                        ).item()
+                        c_dict_to_update[distribution_index].append(mae)
+
+                return {
+                    "in_sample_error": self.in_sample_mean_squared_error,
+                    "out_of_sample_error": self.out_of_sample_mean_squared_error,
+                }

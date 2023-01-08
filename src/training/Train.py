@@ -3,7 +3,7 @@ import torch
 import os
 import sys
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/utils")
 import utils
 
@@ -81,7 +81,13 @@ class Train:
         raise NotImplementedError
 
     def compute_mini_batch_metrics(
-        self, inputs, outputs, targets, out_of_sample_input, out_of_sample_target
+        self,
+        inputs,
+        outputs,
+        targets,
+        out_of_sample_input,
+        out_of_sample_target,
+        distribution_ind,
     ):
         """Calculates loss of a minibatch
 
@@ -101,6 +107,9 @@ class Train:
 
         out_of_sample_target : tensor
             targets of out of sample mini batch
+
+        distribution_ind : List[int]
+            index of target distribution sampled from
 
         Returns
         -------
@@ -156,7 +165,7 @@ class Train:
                 experiment_data,
             )
 
-    def iteration_update(self, i, inputs, outputs, targets, loss):
+    def iteration_update(self, i, inputs, outputs, targets, loss, distribution_ind):
         """Is called every minibatch. Used for logging.
 
         Parameters
@@ -175,6 +184,9 @@ class Train:
 
         loss : tensor
             current loss of model
+
+        distribution_ind : List[int]
+            index of target distribution sampled from
         """
         with torch.no_grad():
             self.curr_loss += loss.item()
@@ -199,9 +211,15 @@ class Train:
                     targets,
                     out_of_sample_input,
                     out_of_sample_target,
+                    distribution_ind,
+                    out_of_sample_data["distribution_ind"]
+                    if "distribution_ind" in out_of_sample_data
+                    else None,
                 )
                 mini_batch_metrics["train_loss_lst"] = self.train_loss_lst
                 mini_batch_metrics["train_time_lst"] = self.train_time_lst
+                if distribution_ind is not None:
+                    mini_batch_metrics["distribution_ind"] = distribution_ind
 
                 # save and print metrics
                 if self.upload_to_s3:
@@ -216,7 +234,8 @@ class Train:
                         mini_batch_metrics,
                     )
                 print(
-                    f"[{i} / {self.num_grad_steps}] Train Loss: {scaled_curr_loss} | Time {int(time.time() - self.start_time)}", flush=True
+                    f"[{i} / {self.num_grad_steps}] Train Loss: {scaled_curr_loss} | Time {int(time.time() - self.start_time)}",
+                    flush=True,
                 )
                 self.curr_loss = 0
 
@@ -238,7 +257,17 @@ class Train:
             loss.backward()
             self.optimizer.step()
             with torch.no_grad():
-                self.iteration_update(i, inputs, outputs, targets, loss)
+                self.iteration_update(
+                    i,
+                    inputs,
+                    outputs,
+                    targets,
+                    loss,
+                    data["distribution_ind"] if "distribution_ind" in data else None,
+                )
         print(f"[Logging] Finished training {self.experiment_name}")
-        print(f"[Logging] Saving state {self.experiment_name}, {self.bucket_name}", flush=True)
+        print(
+            f"[Logging] Saving state {self.experiment_name}, {self.bucket_name}",
+            flush=True,
+        )
         self.save_state(loss)
