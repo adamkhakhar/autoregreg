@@ -279,12 +279,13 @@ class ARRTrain(Train):
                     "out_of_sample_soft_mean_squared_error": self.out_of_sample_soft_mean_squared_error,
                 }
             else:
-                self.num_distributions = max(in_sample_distribution_ind) + 1
-                for i in range(self.num_distributions):
-                    self.in_sample_soft_mean_squared_error[i] = []
-                    self.out_of_sample_soft_mean_squared_error[i] = []
-                    self.in_sample_hard_mean_squared_error[i] = []
-                    self.out_of_sample_hard_mean_squared_error[i] = []
+                if self.num_distributions is None:
+                    self.num_distributions = max(in_sample_distribution_ind) + 1
+                    for i in range(self.num_distributions):
+                        self.in_sample_soft_mean_squared_error[i] = []
+                        self.out_of_sample_soft_mean_squared_error[i] = []
+                        self.in_sample_hard_mean_squared_error[i] = []
+                        self.out_of_sample_hard_mean_squared_error[i] = []
                 for distribution_index in range(self.num_distributions):
                     for (
                         c_output,
