@@ -79,6 +79,7 @@ class ARRTrain(Train):
             self.out_of_sample_soft_mean_squared_error[i] = []
             self.in_sample_hard_mean_squared_error[i] = []
             self.out_of_sample_hard_mean_squared_error[i] = []
+        self.num_distributions = None
 
     def calculate_loss(self, outputs, targets):
         """Calculates loss of a minibatch
@@ -147,7 +148,14 @@ class ARRTrain(Train):
         )
 
     def compute_mini_batch_metrics(
-        self, inputs, outputs, targets, out_of_sample_input, out_of_sample_target
+        self,
+        inputs,
+        outputs,
+        targets,
+        out_of_sample_input,
+        out_of_sample_target,
+        in_sample_distribution_ind,
+        out_of_sample_distribution_ind,
     ):
         """Calculates loss of a minibatch
 
@@ -168,6 +176,12 @@ class ARRTrain(Train):
         out_of_sample_target : tensor
             targets of out of sample mini batch
 
+        in_sample_distribution_ind : List[int]
+            index of target distribution sampled from
+
+        out_of_sample_distribution_ind: List[int]
+            index of target distribution sampled from
+
         Returns
         -------
         dict
@@ -175,87 +189,208 @@ class ARRTrain(Train):
         """
         with torch.no_grad():
             out_of_sample_output = self.model(out_of_sample_input)
-            for target_index in range(self.number_targets):
-                for (
-                    c_output,
-                    c_target,
-                    c_hard_dict_to_update,
-                    c_soft_dict_to_update,
-                ) in [
-                    (
-                        outputs,
-                        targets,
-                        self.in_sample_hard_mean_squared_error,
-                        self.in_sample_soft_mean_squared_error,
-                    ),
-                    (
-                        out_of_sample_output,
-                        out_of_sample_target,
-                        self.out_of_sample_hard_mean_squared_error,
-                        self.out_of_sample_soft_mean_squared_error,
-                    ),
-                ]:
+            if in_sample_distribution_ind is None:
+                for target_index in range(self.number_targets):
+                    for (
+                        c_output,
+                        c_target,
+                        c_hard_dict_to_update,
+                        c_soft_dict_to_update,
+                    ) in [
+                        (
+                            outputs,
+                            targets,
+                            self.in_sample_hard_mean_squared_error,
+                            self.in_sample_soft_mean_squared_error,
+                        ),
+                        (
+                            out_of_sample_output,
+                            out_of_sample_target,
+                            self.out_of_sample_hard_mean_squared_error,
+                            self.out_of_sample_soft_mean_squared_error,
+                        ),
+                    ]:
 
-                    # restrict output and targets to be only
-                    for bin_index in range(len(c_output[target_index])):
-                        c_output[target_index][bin_index] = c_output[target_index][
-                            bin_index
-                        ][: self.num_samples_error_track]
-                        c_target[target_index][bin_index] = c_target[target_index][
-                            bin_index
-                        ][: self.num_samples_error_track]
-
-                    # hard error
-                    output_logit_arg_max = []
-                    target_logit_arg_max = []
-                    for bin_index in range(len(c_output[target_index])):
-                        output_logit_arg_max.append(
-                            torch.argmax(c_output[target_index][bin_index], dim=1).cpu()
-                        )
-                        target_logit_arg_max.append(
-                            torch.argmax(c_target[target_index][bin_index], dim=1).cpu()
-                        )
-                    hard_mse, _, target_value = self._l_arg_max_to_mse(
-                        output_logit_arg_max, target_logit_arg_max, target_index
-                    )
-                    c_hard_dict_to_update[target_index].append(hard_mse)
-
-                    # soft error
-                    output_soft_max = []
-                    for sample_index in range(len(c_output[0][0])):
-                        curr_samples = []
+                        # restrict output and targets to be only
                         for bin_index in range(len(c_output[target_index])):
-                            soft_max = nn.Softmax(dim=1)(
-                                c_output[target_index][bin_index]
-                            ).tolist()[0]
-                            soft_max_sum = sum(soft_max)
-                            soft_max = [x / soft_max_sum for x in soft_max]
-                            curr_samples.append(
-                                np.random.choice(
-                                    self.bases[target_index],
-                                    self.num_samples_error_track,
-                                    p=soft_max,
-                                )
-                            )
-                        curr_sample_tensor = torch.Tensor(
-                            np.stack(curr_samples, axis=1)
-                        )
-                        float_values = utils.matrix_exponent_notation_to_float(
-                            curr_sample_tensor,
-                            self.bases[target_index],
-                            self.exp_min[target_index],
-                            self.exp_max[target_index],
-                        )
-                        avg_value = torch.mean(float_values)
-                        output_soft_max.append(avg_value.item())
-                    soft_mse = torch.sum(
-                        (torch.Tensor(output_soft_max) - target_value) ** 2
-                    ).item() / len(output_soft_max)
-                    c_soft_dict_to_update[target_index].append(soft_mse)
+                            c_output[target_index][bin_index] = c_output[target_index][
+                                bin_index
+                            ][: self.num_samples_error_track]
+                            c_target[target_index][bin_index] = c_target[target_index][
+                                bin_index
+                            ][: self.num_samples_error_track]
 
-            return {
-                "in_sample_hard_mean_squared_error": self.in_sample_hard_mean_squared_error,
-                "out_of_sample_hard_mean_squared_error": self.out_of_sample_hard_mean_squared_error,
-                "in_sample_soft_mean_squared_error": self.in_sample_soft_mean_squared_error,
-                "out_of_sample_soft_mean_squared_error": self.out_of_sample_soft_mean_squared_error,
-            }
+                        # hard error
+                        output_logit_arg_max = []
+                        target_logit_arg_max = []
+                        for bin_index in range(len(c_output[target_index])):
+                            output_logit_arg_max.append(
+                                torch.argmax(
+                                    c_output[target_index][bin_index], dim=1
+                                ).cpu()
+                            )
+                            target_logit_arg_max.append(
+                                torch.argmax(
+                                    c_target[target_index][bin_index], dim=1
+                                ).cpu()
+                            )
+                        hard_mse, _, target_value = self._l_arg_max_to_mse(
+                            output_logit_arg_max, target_logit_arg_max, target_index
+                        )
+                        c_hard_dict_to_update[target_index].append(hard_mse)
+
+                        # soft error
+                        output_soft_max = []
+                        for sample_index in range(len(c_output[0][0])):
+                            curr_samples = []
+                            for bin_index in range(len(c_output[target_index])):
+                                soft_max = nn.Softmax(dim=1)(
+                                    c_output[target_index][bin_index]
+                                ).tolist()[0]
+                                soft_max_sum = sum(soft_max)
+                                soft_max = [x / soft_max_sum for x in soft_max]
+                                curr_samples.append(
+                                    np.random.choice(
+                                        self.bases[target_index],
+                                        self.num_samples_error_track,
+                                        p=soft_max,
+                                    )
+                                )
+                            curr_sample_tensor = torch.Tensor(
+                                np.stack(curr_samples, axis=1)
+                            )
+                            float_values = utils.matrix_exponent_notation_to_float(
+                                curr_sample_tensor,
+                                self.bases[target_index],
+                                self.exp_min[target_index],
+                                self.exp_max[target_index],
+                            )
+                            avg_value = torch.mean(float_values)
+                            output_soft_max.append(avg_value.item())
+                        soft_mse = torch.sum(
+                            (torch.Tensor(output_soft_max) - target_value) ** 2
+                        ).item() / len(output_soft_max)
+                        c_soft_dict_to_update[target_index].append(soft_mse)
+
+                return {
+                    "in_sample_hard_mean_squared_error": self.in_sample_hard_mean_squared_error,
+                    "out_of_sample_hard_mean_squared_error": self.out_of_sample_hard_mean_squared_error,
+                    "in_sample_soft_mean_squared_error": self.in_sample_soft_mean_squared_error,
+                    "out_of_sample_soft_mean_squared_error": self.out_of_sample_soft_mean_squared_error,
+                }
+            else:
+                self.num_distributions = max(in_sample_distribution_ind) + 1
+                for i in range(self.num_distributions):
+                    self.in_sample_soft_mean_squared_error[i] = []
+                    self.out_of_sample_soft_mean_squared_error[i] = []
+                    self.in_sample_hard_mean_squared_error[i] = []
+                    self.out_of_sample_hard_mean_squared_error[i] = []
+                for distribution_index in range(self.num_distributions):
+                    for (
+                        c_output,
+                        c_target,
+                        distribution_ind,
+                        c_hard_dict_to_update,
+                        c_soft_dict_to_update,
+                    ) in [
+                        (
+                            outputs,
+                            targets,
+                            in_sample_distribution_ind,
+                            self.in_sample_hard_mean_squared_error,
+                            self.in_sample_soft_mean_squared_error,
+                        ),
+                        (
+                            out_of_sample_output,
+                            out_of_sample_target,
+                            out_of_sample_distribution_ind,
+                            self.out_of_sample_hard_mean_squared_error,
+                            self.out_of_sample_soft_mean_squared_error,
+                        ),
+                    ]:
+                        mask = distribution_ind == distribution_index
+                        indices = torch.squeeze(torch.nonzero(mask), dim=(0))
+                        filtered_c_output = []
+                        filtered_c_target = []
+                        for exp_index in range(len(c_output[0])):
+                            if len(indices) > 1:
+                                filtered_c_output.append(
+                                    torch.squeeze(c_output[0][exp_index][indices])
+                                )
+                                filtered_c_target.append(
+                                    torch.squeeze(c_target[0][exp_index][indices])
+                                )
+                            else:
+                                filtered_c_output.append(
+                                    torch.squeeze(c_output[0][exp_index][indices]),
+                                    dim=(1, self.exp_max - self.exp_min + 1),
+                                )
+                                filtered_c_target.append(
+                                    torch.squeeze(c_target[0][exp_index][indices]),
+                                    dim=(1, self.exp_max - self.exp_min + 1),
+                                )
+                        c_output = [filtered_c_output]
+                        c_target = [filtered_c_target]
+                        # restrict output and targets to be only
+                        for bin_index in range(len(c_output[0])):
+                            c_output[0][bin_index] = c_output[0][bin_index][
+                                : self.num_samples_error_track
+                            ]
+                            c_target[0][bin_index] = c_target[0][bin_index][
+                                : self.num_samples_error_track
+                            ]
+
+                        # hard error
+                        output_logit_arg_max = []
+                        target_logit_arg_max = []
+                        for bin_index in range(len(c_output[0])):
+                            output_logit_arg_max.append(
+                                torch.argmax(c_output[0][bin_index], dim=1).cpu()
+                            )
+                            target_logit_arg_max.append(
+                                torch.argmax(c_target[0][bin_index], dim=1).cpu()
+                            )
+                        hard_mse, _, target_value = self._l_arg_max_to_mse(
+                            output_logit_arg_max, target_logit_arg_max, 0
+                        )
+                        c_hard_dict_to_update[distribution_index].append(hard_mse)
+
+                        # soft error
+                        output_soft_max = []
+                        for sample_index in range(len(c_output[0][0])):
+                            curr_samples = []
+                            for bin_index in range(len(c_output[0])):
+                                soft_max = nn.Softmax(dim=1)(
+                                    c_output[0][bin_index]
+                                ).tolist()[0]
+                                soft_max_sum = sum(soft_max)
+                                soft_max = [x / soft_max_sum for x in soft_max]
+                                curr_samples.append(
+                                    np.random.choice(
+                                        self.bases[0],
+                                        self.num_samples_error_track,
+                                        p=soft_max,
+                                    )
+                                )
+                            curr_sample_tensor = torch.Tensor(
+                                np.stack(curr_samples, axis=1)
+                            )
+                            float_values = utils.matrix_exponent_notation_to_float(
+                                curr_sample_tensor,
+                                self.bases[0],
+                                self.exp_min[0],
+                                self.exp_max[0],
+                            )
+                            avg_value = torch.mean(float_values)
+                            output_soft_max.append(avg_value.item())
+                        soft_mse = torch.sum(
+                            (torch.Tensor(output_soft_max) - target_value) ** 2
+                        ).item() / len(output_soft_max)
+                        c_soft_dict_to_update[distribution_index].append(soft_mse)
+
+                return {
+                    "in_sample_hard_mean_squared_error": self.in_sample_hard_mean_squared_error,
+                    "out_of_sample_hard_mean_squared_error": self.out_of_sample_hard_mean_squared_error,
+                    "in_sample_soft_mean_squared_error": self.in_sample_soft_mean_squared_error,
+                    "out_of_sample_soft_mean_squared_error": self.out_of_sample_soft_mean_squared_error,
+                }
