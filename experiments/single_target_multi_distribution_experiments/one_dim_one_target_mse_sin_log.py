@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import torch
 import argparse
+import wandb
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ROOT_DIR)
@@ -38,23 +39,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "--learning_rate", dest="learning_rate", type=float, default=1e-3
     )
-    parser.add_argument("--save_local", dest="save_local", type=str, default="F")
-    parser.add_argument("--upload_to_s3", dest="upload_to_s3", type=str, default="T")
-    parser.add_argument("--print_every", dest="print_every", type=str, default="F")
+    parser.add_argument("--save_local", action="store_true")
+    parser.add_argument("--upload_to_s3", action="store_true")
+    parser.add_argument("--print_every", action="store_true")
+    parser.add_argument("--wandb", action="store_true")
     args = parser.parse_args()
 
     # Convert boolean vars in to boolean
-    assert args.save_local in ["T", "F"]
-    assert args.upload_to_s3 in ["T", "F"]
-    assert args.print_every in ["T", "F"]
     assert args.sin in ["s", "l"]
     assert args.log in ["s", "l"]
     args.sin_small = args.sin == "s"
     args.log_small = args.log == "s"
-    args.save_local = args.save_local == "T"
-    args.upload_to_s3 = args.upload_to_s3 == "T"
-    args.print_every = args.print_every == "T"
-    args.experiment_name += f"_lr_{args.learning_rate}_seed_{args.seed}"
     print(args, flush=True)
 
     # set seed
@@ -80,6 +75,14 @@ if __name__ == "__main__":
         num_workers=args.num_workers,
     )
 
+    # wandb setup
+    if args.wandb:
+        wandb.init(
+            config=vars(args),
+            name=args.experiment_name,
+            project=os.path.basename(__file__),
+        )
+
     # construct model
     model = FeedForward(1, 1, args.num_layers, args.layer_dim)
 
@@ -100,6 +103,7 @@ if __name__ == "__main__":
         upload_to_s3=args.upload_to_s3,
         bucket_name="arr-saved-experiment-data",
         print_every=args.print_every,
+        use_wandb=args.wandb,
     )
 
     # run training

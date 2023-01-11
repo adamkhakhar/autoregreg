@@ -24,6 +24,7 @@ class MSETrain(Train):
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",
         print_every=False,
+        use_wandb=False,
     ):
         # variables from parameters
         self.device = (
@@ -53,6 +54,7 @@ class MSETrain(Train):
             upload_to_s3=self.upload_to_s3,
             bucket_name=self.bucket_name,
             print_every=self.print_every,
+            use_wandb=use_wandb,
         )
 
         # variables used during execution
