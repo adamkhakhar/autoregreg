@@ -2,6 +2,7 @@ import time
 import torch
 import os
 import sys
+import wandb
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/utils")
@@ -42,6 +43,7 @@ class Train:
         upload_to_s3=True,
         bucket_name="arr-saved-experiment-data",
         print_every=False,
+        use_wandb=False,
     ):
         # variables from parameters
         self.device = device
@@ -55,6 +57,7 @@ class Train:
         self.save_local = save_local
         self.upload_to_s3 = upload_to_s3
         self.bucket_name = bucket_name
+        self.use_wandb = use_wandb
 
         # variables used during execution
         self.curr_loss = 0
@@ -222,6 +225,31 @@ class Train:
                     mini_batch_metrics["distribution_ind"] = distribution_ind
 
                 # save and print metrics
+                if self.use_wandb:
+                    wandb_log_dict = {}
+                    wandb_log_dict["batch"] = i
+                    for key in mini_batch_metrics:
+                        if (
+                            type(mini_batch_metrics[key]) == list
+                            and len(mini_batch_metrics[key]) > 0
+                        ):
+                            if type(mini_batch_metrics[key][-1]) == list:
+                                for list_idx in range(len(mini_batch_metrics[key][-1])):
+                                    wandb_log_dict[
+                                        key + f"[{list_idx}]"
+                                    ] = mini_batch_metrics[key][-1][list_idx]
+                            else:
+                                wandb_log_dict[key] = mini_batch_metrics[key][-1]
+                        elif type(mini_batch_metrics[key]) == dict:
+                            for inner_key in mini_batch_metrics[key]:
+                                assert type(mini_batch_metrics[key][inner_key]) == list
+                                wandb_log_dict[
+                                    key + ":" + str(inner_key)
+                                ] = mini_batch_metrics[key][inner_key][-1]
+                        else:
+                            wandb_log_dict[key] = mini_batch_metrics[key]
+                    wandb.log(wandb_log_dict)
+
                 if self.upload_to_s3:
                     utils.upload_to_s3(
                         self.bucket_name,
