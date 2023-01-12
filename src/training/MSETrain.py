@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import os
 import sys
-import ipdb
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/src/training")

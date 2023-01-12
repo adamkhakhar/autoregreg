@@ -62,6 +62,7 @@ class MAETrain(Train):
         for i in range(self.number_targets):
             self.in_sample_error[i] = []
             self.out_of_sample_error[i] = []
+        self.num_distributions = None
 
     def calculate_loss(self, outputs, targets):
         """Calculates loss of a minibatch
@@ -134,11 +135,11 @@ class MAETrain(Train):
             if in_sample_distribution_ind is None:
                 for i in range(self.number_targets):
                     for (c_output, c_target, c_dict_to_update) in [
-                        (outputs, targets, self.in_sample_mean_squared_error),
+                        (outputs, targets, self.in_sample_error),
                         (
                             out_of_sample_output,
                             out_of_sample_target,
-                            self.out_of_sample_mean_squared_error,
+                            self.out_of_sample_error,
                         ),
                     ]:
                         curr_output = c_output[:, i]
@@ -150,28 +151,28 @@ class MAETrain(Train):
                         c_dict_to_update[i].append(mae)
 
                 return {
-                    "in_sample_error": self.in_sample_mean_squared_error,
-                    "out_of_sample_error": self.out_of_sample_mean_squared_error,
+                    "in_sample_error": self.in_sample_error,
+                    "out_of_sample_error": self.out_of_sample_error,
                 }
             else:
                 if self.num_distributions is None:
                     self.num_distributions = max(in_sample_distribution_ind) + 1
                     for i in range(self.num_distributions):
-                        self.in_sample_mean_squared_error[i] = []
-                        self.out_of_sample_mean_squared_error[i] = []
+                        self.in_sample_error[i] = []
+                        self.out_of_sample_error[i] = []
                 for distribution_index in range(self.num_distributions):
                     for (c_output, c_target, distribution_ind, c_dict_to_update) in [
                         (
                             outputs,
                             targets,
                             in_sample_distribution_ind,
-                            self.in_sample_mean_squared_error,
+                            self.in_sample_error,
                         ),
                         (
                             out_of_sample_output,
                             out_of_sample_target,
                             out_of_sample_distribution_ind,
-                            self.out_of_sample_mean_squared_error,
+                            self.out_of_sample_error,
                         ),
                     ]:
                         mask = distribution_ind == distribution_index
@@ -185,6 +186,6 @@ class MAETrain(Train):
                         c_dict_to_update[distribution_index].append(mae)
 
                 return {
-                    "in_sample_error": self.in_sample_mean_squared_error,
-                    "out_of_sample_error": self.out_of_sample_mean_squared_error,
+                    "in_sample_error": self.in_sample_error,
+                    "out_of_sample_error": self.out_of_sample_error,
                 }

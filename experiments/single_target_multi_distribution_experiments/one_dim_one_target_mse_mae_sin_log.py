@@ -15,6 +15,7 @@ from src.datasets.OneDimMultiDistributionSingleTarget import (
 )
 from src.models.FeedForward import FeedForward
 from src.training.MSETrain import MSETrain
+from src.training.MAETrain import MAETrain
 from target_functions import sin_small, sin_large, log_small, log_large
 
 
@@ -44,6 +45,7 @@ if __name__ == "__main__":
     parser.add_argument("--upload_to_s3", action="store_true")
     parser.add_argument("--print_every", action="store_true")
     parser.add_argument("--wandb", action="store_true")
+    parser.add_argument("--mae", action="store_true")
     args = parser.parse_args()
 
     # Convert boolean vars in to boolean
@@ -91,7 +93,8 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     # construct training
-    training = MSETrain(
+    training_module = MSETrain if not args.mae else MAETrain
+    training = training_module(
         args.experiment_name,
         1,
         model,
