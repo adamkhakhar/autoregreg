@@ -5,6 +5,7 @@ import os
 import sys
 from typing import List
 import random
+import ipdb
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/utils")
@@ -93,7 +94,7 @@ class MNISTDataSet:
         if self.flat_input:
             input = torch.Tensor(np.reshape(input.numpy(), (56 * 56)))
         if not self.auto_regressive:
-            return {"input": input, "target": target}
+            return {"input": input, "target": target, "distribution_ind": distribution_ind,}
         else:
             target_output = []
             for target_index in range(len(target)):

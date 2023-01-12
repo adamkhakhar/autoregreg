@@ -72,8 +72,8 @@ if __name__ == "__main__":
 
     # construct dataloader
     input_fun = [
-        lambda: np.random.uniform(low=0, high=1) * -1,
-        lambda: np.random.uniform(low=0, high=1),
+        lambda x: 1 - x,
+        lambda x: x,
     ]
     target_fun = [
         sin_small if args.sin_small else sin_large,
@@ -86,7 +86,6 @@ if __name__ == "__main__":
         pin_memory=torch.cuda.is_available(),
         num_workers=args.num_workers,
     )
-
     # construct model
     model = CNN(len(target_fun), (28 * 2) ** 2, args.layer_dim)
 
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     training_module = MSETrain if not args.mae else MAETrain
     training = training_module(
         args.experiment_name,
-        len(target_fun),
+        1,
         model,
         data_loader,
         optimizer,

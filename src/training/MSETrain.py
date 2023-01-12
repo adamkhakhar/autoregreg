@@ -88,6 +88,8 @@ class MSETrain(Train):
                 curr_output.reshape(curr_output.shape[0], 1),
                 curr_target.reshape(curr_target.shape[0], 1),
             )
+            if torch.isnan(loss):
+                raise Exception("LOSS IS NAN")
         return loss
 
     def compute_mini_batch_metrics(
