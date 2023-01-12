@@ -22,7 +22,7 @@ from target_functions import sin_small, sin_large, log_small, log_large
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Variable Target auto regressive Feed Forward Model"
+        description="Variable Distribution auto regressive Feed Forward Model"
     )
     parser.add_argument("experiment_name", type=str)
     parser.add_argument("--sin", dest="sin", type=str, default="s")
@@ -55,6 +55,12 @@ if __name__ == "__main__":
     parser.add_argument("--upload_to_s3", action="store_true")
     parser.add_argument("--print_every", action="store_true")
     parser.add_argument("--wandb", action="store_true")
+    parser.add_argument(
+        "--wandb_project",
+        dest="wandb_project",
+        type=str,
+        default=os.path.basename(__file__),
+    )
     args = parser.parse_args()
 
     # Convert boolean vars in to boolean
@@ -69,7 +75,7 @@ if __name__ == "__main__":
         wandb.init(
             config=vars(args),
             name=args.experiment_name,
-            project=os.path.basename(__file__),
+            project=args.wandb_project,
         )
 
     # set seed

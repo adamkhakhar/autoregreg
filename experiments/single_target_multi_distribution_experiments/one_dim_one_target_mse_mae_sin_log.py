@@ -21,7 +21,7 @@ from target_functions import sin_small, sin_large, log_small, log_large
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Variable Target MSE Feed Forward Model"
+        description="Variable Distribution MSE Feed Forward Model"
     )
     parser.add_argument("experiment_name", type=str)
     parser.add_argument(
@@ -46,6 +46,13 @@ if __name__ == "__main__":
     parser.add_argument("--print_every", action="store_true")
     parser.add_argument("--wandb", action="store_true")
     parser.add_argument("--mae", action="store_true")
+    parser.add_argument(
+        "--wandb_project",
+        dest="wandb_project",
+        type=str,
+        default=os.path.basename(__file__),
+    )
+
     args = parser.parse_args()
 
     # Convert boolean vars in to boolean
@@ -54,6 +61,14 @@ if __name__ == "__main__":
     args.sin_small = args.sin == "s"
     args.log_small = args.log == "s"
     pprint(vars(args))
+
+    # wandb setup
+    if args.wandb:
+        wandb.init(
+            config=vars(args),
+            name=args.experiment_name,
+            project=args.wandb_project,
+        )
 
     # set seed
     torch.manual_seed(args.seed)
@@ -77,14 +92,6 @@ if __name__ == "__main__":
         pin_memory=torch.cuda.is_available(),
         num_workers=args.num_workers,
     )
-
-    # wandb setup
-    if args.wandb:
-        wandb.init(
-            config=vars(args),
-            name=args.experiment_name,
-            project=os.path.basename(__file__),
-        )
 
     # construct model
     model = FeedForward(1, 1, args.num_layers, args.layer_dim)
