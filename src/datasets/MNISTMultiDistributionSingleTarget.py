@@ -44,6 +44,7 @@ class MNISTDataSet:
         self.base = base
         self.exp_min = exp_min
         self.exp_max = exp_max
+        self.dist_probs = dist_probs
         assert all([p_i > 0 for p_i in dist_probs])
         assert all([p_i <= 1 for p_i in dist_probs])
         assert sum(dist_probs) > 0.99 and sum(dist_probs) < 1.01
@@ -99,14 +100,12 @@ class MNISTDataSet:
                 current_target_outputs = []
                 exponent_notation = utils.float_to_exponent_notation(
                     target[target_index],
-                    self.bases[target_index],
-                    self.exp_min[target_index],
-                    self.exp_max[target_index],
+                    self.base,
+                    self.exp_min,
+                    self.exp_max,
                 )
-                for bin_ind in range(
-                    self.exp_max[target_index] - self.exp_min[target_index] + 1
-                ):
-                    one_hot_tensor = torch.zeros(self.bases[target_index])
+                for bin_ind in range(self.exp_max - self.exp_min + 1):
+                    one_hot_tensor = torch.zeros(self.base)
                     one_hot_tensor[exponent_notation[bin_ind]] = 1
                     current_target_outputs.append(one_hot_tensor)
                 target_output.append(current_target_outputs)
