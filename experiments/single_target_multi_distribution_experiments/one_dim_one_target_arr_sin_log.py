@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import argparse
 import wandb
+from pprint import pprint
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ROOT_DIR)
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     assert args.log in ["s", "l"]
     args.sin_small = args.sin == "s"
     args.log_small = args.log == "s"
-    print(args, flush=True)
+    pprint(vars(args))
 
     # wandb setup
     if args.wandb:
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     # construct dataloader
     ### MODIFY DATA FUNCTIONS HERE ###
     input_fun = [
-        lambda: np.random.uniform(low=0, high=1),
+        lambda: np.random.uniform(low=0, high=1) * -1,
         lambda: np.random.uniform(low=0, high=1),
     ]
     target_fun = [
