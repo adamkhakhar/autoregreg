@@ -94,7 +94,12 @@ class MNISTDataSet:
         if self.flat_input:
             input = torch.Tensor(np.reshape(input.numpy(), (56 * 56)))
         if not self.auto_regressive:
-            return {"input": input, "target": target, "distribution_ind": distribution_ind,}
+            return {
+                "input": input,
+                "target": target,
+                "distribution_ind": distribution_ind,
+                "orig_value": torch.tensor([x], dtype=torch.float),
+            }
         else:
             target_output = []
             for target_index in range(len(target)):
@@ -114,4 +119,5 @@ class MNISTDataSet:
                 "input": input,
                 "target": target_output,
                 "distribution_ind": distribution_ind,
+                "orig_value": torch.tensor([x], dtype=torch.float),
             }

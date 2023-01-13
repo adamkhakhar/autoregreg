@@ -167,7 +167,9 @@ class Train:
                 experiment_data,
             )
 
-    def iteration_update(self, i, inputs, outputs, targets, loss, distribution_ind):
+    def iteration_update(
+        self, i, inputs, outputs, targets, loss, distribution_ind, orig_value
+    ):
         """Is called every minibatch. Used for logging.
 
         Parameters
@@ -189,6 +191,9 @@ class Train:
 
         distribution_ind : List[int]
             index of target distribution sampled from
+
+        orig_value : tensor
+            original value (float) of target before transformation
         """
         with torch.no_grad():
             self.curr_loss += loss.item()
@@ -208,11 +213,15 @@ class Train:
                     inputs,
                     outputs,
                     targets,
+                    distribution_ind,
+                    orig_value,
                     out_of_sample_input,
                     out_of_sample_target,
-                    distribution_ind,
                     out_of_sample_data["distribution_ind"]
                     if "distribution_ind" in out_of_sample_data
+                    else None,
+                    out_of_sample_data["orig_value"]
+                    if "orig_value" in out_of_sample_data
                     else None,
                 )
                 mini_batch_metrics["train_loss_lst"] = self.train_loss_lst
@@ -286,6 +295,7 @@ class Train:
                     targets,
                     loss,
                     data["distribution_ind"] if "distribution_ind" in data else None,
+                    data["orig_value"] if "orig_value" in data else None,
                 )
         print(f"[Logging] Finished training {self.experiment_name}")
         print(

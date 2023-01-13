@@ -157,10 +157,12 @@ class ARRTrain(Train):
         inputs,
         outputs,
         targets,
+        in_sample_distribution_ind,
+        in_sample_orig_value,
         out_of_sample_input,
         out_of_sample_target,
-        in_sample_distribution_ind,
         out_of_sample_distribution_ind,
+        out_of_sample_orig_value,
     ):
         """Calculates loss of a minibatch
 
@@ -175,17 +177,23 @@ class ARRTrain(Train):
         targets : tensor
             features of last mini batch
 
+        in_sample_distribution_ind : List[int]
+            index of target distribution sampled from
+
+        in_sample_orig_value : tensor
+            original value of target from data
+
         out_of_sample_input : tensor
             inputs of out of sample mini batch
 
         out_of_sample_target : tensor
             targets of out of sample mini batch
 
-        in_sample_distribution_ind : List[int]
-            index of target distribution sampled from
-
         out_of_sample_distribution_ind: List[int]
             index of target distribution sampled from
+
+        out_of_sample_orig_value : tensor
+            original value of target from data
 
         Returns
         -------

@@ -50,6 +50,7 @@ class OneDimMultiDistributionSingleTarget:
                 "input": torch.tensor(input, dtype=torch.float),
                 "target": torch.tensor(target, dtype=torch.float),
                 "distribution_ind": distribution_ind,
+                "orig_value": torch.tensor(input, dtype=torch.float),
             }
         else:
             target_output = []
@@ -69,4 +70,5 @@ class OneDimMultiDistributionSingleTarget:
                 "input": torch.tensor(input, dtype=torch.float),
                 "target": target_output,
                 "distribution_ind": distribution_ind,
+                "orig_value": torch.tensor(input, dtype=torch.float),
             }
