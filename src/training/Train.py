@@ -134,7 +134,7 @@ class Train:
         tuple (args)
             input and target on device
         """
-        return tuple([a.to(self.device) for a in args])
+        return tuple([a.to(self.device) if torch.is_tensor(a) else a for a in args])
 
     def save_state(self, loss):
         """Saves state of model to s3

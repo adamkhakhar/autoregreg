@@ -48,7 +48,9 @@ def execute_experiment(args):
         sampled_targets = []
         for _ in range(100_000):
             dist_ind = np.random.choice(len(input_fun), p=dist_probs)
-            sampled_targets.append(target_fun[dist_ind](input_fun[dist_ind]()))
+            sampled_targets.append(
+                target_fun[dist_ind](np.random.uniform(low=0, high=1))
+            )
         mean_targets = np.mean(sampled_targets)
         sd_targets = np.std(sampled_targets)
         print("mean_targets", mean_targets)
