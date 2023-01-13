@@ -121,21 +121,20 @@ class Train:
         """
         raise NotImplementedError
 
-    def input_and_target_to_device(self, input, target):
-        """Moves input and target to device
+    def object_to_device(self, *args):
+        """Moves args to device
 
         Parameters
         ----------
-        input : input from data loader
+        args : input from data loader
 
-        target : target from data loader
 
         Returns
         -------
-        tuple (input, target)
+        tuple (args)
             input and target on device
         """
-        return (input.to(self.device), target.to(self.device))
+        return tuple([a.to(self.device) for a in args])
 
     def save_state(self, loss):
         """Saves state of model to s3
@@ -195,15 +194,12 @@ class Train:
             self.curr_loss += loss.item()
 
             # save current data state and compute metrics
-            if i % self.log_every == 0 and i != 0:
+            if i % self.log_every == 0 and i != 1:
                 scaled_curr_loss = self.curr_loss / self.log_every
                 self.train_loss_lst.append(scaled_curr_loss)
                 self.train_time_lst.append(time.time() - self.start_time)
                 out_of_sample_data = next(iter(self.data_loader))
-                (
-                    out_of_sample_input,
-                    out_of_sample_target,
-                ) = self.input_and_target_to_device(
+                (out_of_sample_input, out_of_sample_target,) = self.object_to_device(
                     out_of_sample_data["input"], out_of_sample_data["target"]
                 )
 
@@ -271,14 +267,12 @@ class Train:
         """
         Trains model
         """
-        print(f"[Logging] Begin training {self.experiment_name}...")
+        print(f"[Logging] Begin training {self.experiment_name}...", flush=True)
         self.start_time = time.time()
         for i, data in enumerate(self.data_loader, 0):
             if self.print_every:
                 print(i, int(time.time() - self.start_time), flush=True)
-            inputs, targets = self.input_and_target_to_device(
-                data["input"], data["target"]
-            )
+            inputs, targets = self.object_to_device(data["input"], data["target"])
             self.optimizer.zero_grad()
             outputs = self.model(inputs)
             loss = self.calculate_loss(outputs, targets)
@@ -286,7 +280,7 @@ class Train:
             self.optimizer.step()
             with torch.no_grad():
                 self.iteration_update(
-                    i,
+                    i + 1,
                     inputs,
                     outputs,
                     targets,

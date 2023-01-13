@@ -5,6 +5,7 @@ import torch
 import argparse
 import wandb
 from pprint import pprint
+import traceback
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ROOT_DIR)
@@ -18,61 +19,14 @@ from src.training.ARRTrain import ARRTrain
 from target_functions import sin_small, sin_large, log_small, log_large
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="MNIST Variable Distribution auto regressive Feed Forward Model"
-    )
-    parser.add_argument("experiment_name", type=str)
-    parser.add_argument("--sin", dest="sin", type=str, default="s")
-    parser.add_argument("--log", dest="log", type=str, default="s")
-    parser.add_argument("--base", dest="base", type=int, default=100)
-    parser.add_argument("--exp_min", dest="exp_min", type=int, default=-2)
-    parser.add_argument("--exp_max", dest="exp_max", type=int, default=2)
-    parser.add_argument(
-        "--num_samples", dest="num_samples", type=int, default=1_000_000
-    )
-    parser.add_argument("--batch_size", dest="batch_size", type=int, default=100)
-    parser.add_argument("--num_workers", dest="num_workers", type=int, default=1)
-    parser.add_argument(
-        "--num_samples_error_track",
-        dest="num_samples_error_track",
-        type=int,
-        default=100,
-    )
-    parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
-    parser.add_argument("--log_every", dest="log_every", type=int, default=10_000)
-    parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=1024)
-    parser.add_argument(
-        "--seed", dest="seed", type=int, default=np.random.randint(low=1, high=1943)
-    )
-    parser.add_argument(
-        "--learning_rate", dest="learning_rate", type=float, default=1e-3
-    )
-    parser.add_argument("--save_local", action="store_true")
-    parser.add_argument("--upload_to_s3", action="store_true")
-    parser.add_argument("--print_every", action="store_true")
-    parser.add_argument("--wandb", action="store_true")
-    parser.add_argument(
-        "--wandb_project",
-        dest="wandb_project",
-        type=str,
-        default=os.path.basename(__file__),
-    )
-    args = parser.parse_args()
-
-    # Convert boolean vars in to boolean
-    assert args.sin in ["s", "l"]
-    assert args.log in ["s", "l"]
-    args.sin_small = args.sin == "s"
-    args.log_small = args.log == "s"
-    pprint(vars(args))
-
+def execute_experiment(args):
     # wandb setup
     if args.wandb:
         wandb.init(
             config=vars(args),
             name=args.experiment_name,
             project=args.wandb_project,
+            reinit=True,
         )
 
     # set seed
@@ -138,3 +92,59 @@ if __name__ == "__main__":
 
     # run training
     training.train()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="MNIST Variable Distribution auto regressive Feed Forward Model"
+    )
+    parser.add_argument("experiment_name", type=str)
+    parser.add_argument("--sin", dest="sin", type=str, default="s")
+    parser.add_argument("--log", dest="log", type=str, default="s")
+    parser.add_argument("--base", dest="base", type=int, default=100)
+    parser.add_argument("--exp_min", dest="exp_min", type=int, default=-2)
+    parser.add_argument("--exp_max", dest="exp_max", type=int, default=2)
+    parser.add_argument(
+        "--num_samples", dest="num_samples", type=int, default=1_000_000
+    )
+    parser.add_argument("--batch_size", dest="batch_size", type=int, default=100)
+    parser.add_argument("--num_workers", dest="num_workers", type=int, default=1)
+    parser.add_argument(
+        "--num_samples_error_track",
+        dest="num_samples_error_track",
+        type=int,
+        default=100,
+    )
+    parser.add_argument("--gpu_ind", dest="gpu_ind", type=int, default=-1)
+    parser.add_argument("--log_every", dest="log_every", type=int, default=10_000)
+    parser.add_argument("--layer_dim", dest="layer_dim", type=int, default=1024)
+    parser.add_argument(
+        "--seed", dest="seed", type=int, default=np.random.randint(low=1, high=1943)
+    )
+    parser.add_argument(
+        "--learning_rate", dest="learning_rate", type=float, default=1e-3
+    )
+    parser.add_argument("--save_local", action="store_true")
+    parser.add_argument("--upload_to_s3", action="store_true")
+    parser.add_argument("--print_every", action="store_true")
+    parser.add_argument("--wandb", action="store_true")
+    parser.add_argument(
+        "--wandb_project",
+        dest="wandb_project",
+        type=str,
+        default=os.path.basename(__file__),
+    )
+    args = parser.parse_args()
+
+    # Convert boolean vars in to boolean
+    assert args.sin in ["s", "l"]
+    assert args.log in ["s", "l"]
+    args.sin_small = args.sin == "s"
+    args.log_small = args.log == "s"
+    pprint(vars(args))
+
+    try:
+        execute_experiment(args)
+    except:
+        traceback.print_exc()
+        print("EXCEPTION", flush=True)

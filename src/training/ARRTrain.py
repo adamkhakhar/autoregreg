@@ -106,6 +106,9 @@ class ARRTrain(Train):
                     outputs[target_index][bin_index],
                     targets[target_index][bin_index].to(self.device),
                 )
+        if not torch.isfinite(loss):
+            print("LOSS IS NAN", flush=True)
+            raise Exception("LOSS IS NAN")
         return loss
 
     def _l_arg_max_to_mse(

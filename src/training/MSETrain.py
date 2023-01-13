@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import os
 import sys
+import code
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(f"{ROOT_DIR}/src/training")
@@ -24,6 +25,8 @@ class MSETrain(Train):
         bucket_name="arr-saved-experiment-data",
         print_every=False,
         use_wandb=False,
+        output_transform=None,
+        target_fun=None,
     ):
         # variables from parameters
         self.device = (
@@ -40,6 +43,8 @@ class MSETrain(Train):
         self.save_local = save_local
         self.upload_to_s3 = upload_to_s3
         self.bucket_name = bucket_name
+        self.output_transform = output_transform
+        self.target_fun = target_fun
 
         super().__init__(
             self.experiment_name,
@@ -88,8 +93,9 @@ class MSETrain(Train):
                 curr_output.reshape(curr_output.shape[0], 1),
                 curr_target.reshape(curr_target.shape[0], 1),
             )
-            if torch.isnan(loss):
-                raise Exception("LOSS IS NAN")
+        if not torch.isfinite(loss):
+            print("LOSS IS NAN", flush=True)
+            raise Exception("LOSS IS NAN")
         return loss
 
     def compute_mini_batch_metrics(
@@ -163,14 +169,22 @@ class MSETrain(Train):
                         self.in_sample_mean_squared_error[i] = []
                         self.out_of_sample_mean_squared_error[i] = []
                 for distribution_index in range(self.num_distributions):
-                    for (c_output, c_target, distribution_ind, c_dict_to_update) in [
+                    for (
+                        c_input,
+                        c_output,
+                        c_target,
+                        distribution_ind,
+                        c_dict_to_update,
+                    ) in [
                         (
+                            inputs,
                             outputs,
                             targets,
                             in_sample_distribution_ind,
                             self.in_sample_mean_squared_error,
                         ),
                         (
+                            out_of_sample_input,
                             out_of_sample_output,
                             out_of_sample_target,
                             out_of_sample_distribution_ind,
@@ -179,8 +193,16 @@ class MSETrain(Train):
                     ]:
                         mask = distribution_ind == distribution_index
                         indices = torch.nonzero(mask)
+                        curr_input = c_input[indices, 0]
                         curr_output = c_output[indices, 0]
                         curr_target = c_target[indices, 0]
+                        if self.output_transform is not None:
+                            curr_output = self.output_transform(curr_output.cpu())
+                            curr_target = self.target_fun[distribution_index](
+                                curr_input.cpu()
+                            )
+                        if len(self.in_sample_mean_squared_error[0]) > 50:
+                            code.interact(local=locals())
                         mse = nn.MSELoss()(
                             curr_output.reshape(curr_output.shape[0], 1),
                             curr_target.reshape(curr_target.shape[0], 1),

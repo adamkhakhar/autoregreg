@@ -24,6 +24,8 @@ class MAETrain(Train):
         bucket_name="arr-saved-experiment-data",
         print_every=False,
         use_wandb=False,
+        output_transform=None,
+        target_fun=None,
     ):
         # variables from parameters
         self.device = (
@@ -40,6 +42,8 @@ class MAETrain(Train):
         self.save_local = save_local
         self.upload_to_s3 = upload_to_s3
         self.bucket_name = bucket_name
+        self.output_transform = output_transform
+        self.target_fun = None
 
         super().__init__(
             self.experiment_name,
@@ -88,8 +92,9 @@ class MAETrain(Train):
                 curr_output.reshape(curr_output.shape[0], 1),
                 curr_target.reshape(curr_target.shape[0], 1),
             )
-            if torch.isnan(loss):
-                raise Exception("LOSS IS NAN")
+        if not torch.isfinite(loss):
+            print("LOSS IS NAN", flush=True)
+            raise Exception("LOSS IS NAN")
         return loss
 
     def compute_mini_batch_metrics(
@@ -181,6 +186,9 @@ class MAETrain(Train):
                         indices = torch.nonzero(mask)
                         curr_output = c_output[indices, 0]
                         curr_target = c_target[indices, 0]
+                        if self.output_transform is not None:
+                            curr_output = self.output_transform(curr_output)
+                            curr_target = self.output_transform(curr_target)
                         mae = nn.L1Loss()(
                             curr_output.reshape(curr_output.shape[0], 1),
                             curr_target.reshape(curr_target.shape[0], 1),

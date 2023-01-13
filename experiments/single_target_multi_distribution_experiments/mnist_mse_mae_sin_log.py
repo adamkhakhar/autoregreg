@@ -5,6 +5,7 @@ import torch
 import argparse
 import wandb
 from pprint import pprint
+import traceback
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ROOT_DIR)
@@ -15,6 +16,93 @@ from src.models.CNN import CNN
 from src.training.MSETrain import MSETrain
 from src.training.MAETrain import MAETrain
 from target_functions import sin_small, sin_large, log_small, log_large
+
+
+def execute_experiment(args):
+    # wandb setup
+    if args.wandb:
+        wandb.init(
+            config=vars(args),
+            name=args.experiment_name,
+            project=args.wandb_project,
+            reinit=True,
+        )
+
+    # set seed
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
+    # construct dataloader
+    dist_probs = [0.5, 0.5]
+    input_fun = [
+        lambda x: 1 - x,
+        lambda x: x,
+    ]
+    target_fun = [
+        sin_small if args.sin_small else sin_large,
+        log_small if args.log_small else log_large,
+    ]
+    fun_normalized_to_true = None
+    normalized_target_fun = None
+    if args.normalization:
+        sampled_targets = []
+        for _ in range(100_000):
+            dist_ind = np.random.choice(len(input_fun), p=dist_probs)
+            sampled_targets.append(target_fun[dist_ind](input_fun[dist_ind]()))
+        mean_targets = np.mean(sampled_targets)
+        sd_targets = np.std(sampled_targets)
+        print("mean_targets", mean_targets)
+        print("sd_targets", sd_targets)
+        fun_true_to_normalized = lambda x: (x - mean_targets) / sd_targets
+        fun_normalized_to_true = lambda x: sd_targets * x + mean_targets
+        normalized_target_fun = [
+            lambda x: fun_true_to_normalized(
+                sin_small(x) if args.sin_small else sin_large(x)
+            ),
+            lambda x: fun_true_to_normalized(
+                log_small(x) if args.log_small else log_large(x)
+            ),
+        ]
+
+    data_loader = torch.utils.data.DataLoader(
+        MNISTDataSet(
+            input_fun,
+            target_fun if normalized_target_fun is None else normalized_target_fun,
+            args.num_samples,
+            dist_probs,
+        ),
+        batch_size=args.batch_size,
+        pin_memory=torch.cuda.is_available(),
+        num_workers=args.num_workers,
+    )
+    # construct model
+    model = CNN(len(target_fun), (28 * 2) ** 2, args.layer_dim)
+
+    # construct optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+
+    # construct training
+    training_module = MSETrain if not args.mae else MAETrain
+    training = training_module(
+        args.experiment_name,
+        1,
+        model,
+        data_loader,
+        optimizer,
+        args.gpu_ind,
+        args.log_every,
+        args.num_samples // args.batch_size,
+        save_local=args.save_local,
+        upload_to_s3=args.upload_to_s3,
+        bucket_name="arr-saved-experiment-data",
+        print_every=args.print_every,
+        use_wandb=args.wandb,
+        output_transform=fun_normalized_to_true,
+        target_fun=target_fun,
+    )
+
+    # run training
+    training.train()
 
 
 if __name__ == "__main__":
@@ -48,6 +136,7 @@ if __name__ == "__main__":
         type=str,
         default=os.path.basename(__file__),
     )
+    parser.add_argument("--normalization", action="store_true")
 
     args = parser.parse_args()
 
@@ -58,57 +147,8 @@ if __name__ == "__main__":
     args.log_small = args.log == "s"
     pprint(vars(args))
 
-    # wandb setup
-    if args.wandb:
-        wandb.init(
-            config=vars(args),
-            name=args.experiment_name,
-            project=args.wandb_project,
-        )
-
-    # set seed
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
-
-    # construct dataloader
-    input_fun = [
-        lambda x: 1 - x,
-        lambda x: x,
-    ]
-    target_fun = [
-        sin_small if args.sin_small else sin_large,
-        log_small if args.log_small else log_large,
-    ]
-    dist_probs = [0.5, 0.5]
-    data_loader = torch.utils.data.DataLoader(
-        MNISTDataSet(input_fun, target_fun, args.num_samples, dist_probs),
-        batch_size=args.batch_size,
-        pin_memory=torch.cuda.is_available(),
-        num_workers=args.num_workers,
-    )
-    # construct model
-    model = CNN(len(target_fun), (28 * 2) ** 2, args.layer_dim)
-
-    # construct optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-
-    # construct training
-    training_module = MSETrain if not args.mae else MAETrain
-    training = training_module(
-        args.experiment_name,
-        1,
-        model,
-        data_loader,
-        optimizer,
-        args.gpu_ind,
-        args.log_every,
-        args.num_samples // args.batch_size,
-        save_local=args.save_local,
-        upload_to_s3=args.upload_to_s3,
-        bucket_name="arr-saved-experiment-data",
-        print_every=args.print_every,
-        use_wandb=args.wandb,
-    )
-
-    # run training
-    training.train()
+    try:
+        execute_experiment(args)
+    except:
+        traceback.print_exc()
+        print("EXCEPTION", flush=True)
