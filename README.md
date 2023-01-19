@@ -40,60 +40,19 @@ Various training objectives can be used to train the models. Additionally, diffe
 ```
 .
 ├── experiments
-│   ├── amazon_review_experiments
-│   │   ├── amzn_arr.py
-│   │   └── amzn_mse_mae.py
-│   ├── launch_scripts
-│   │   ├── amzn_review_arr_lr_search.sh
-│   │   ├── amzn_review_mse_mae_launch_script.sh
-│   │   ├── amzn_review_mse_mae_lr_search.sh
-│   │   ├── mnist_arr_launch_script.sh
-│   │   ├── mnist_arr_lr_search.sh
-│   │   ├── mnist_mae_launch_script.sh
-│   │   ├── mnist_mae_lr_search.sh
-│   │   ├── mnist_mae_lr_sensivity_launch_script.sh
-│   │   ├── mnist_mse_launch_script.sh
-│   │   ├── mnist_mse_lr_search.sh
-│   │   ├── one_dim_arr_launch_script.sh
-│   │   ├── one_dim_mae_launch_script.sh
-│   │   ├── one_dim_mae_lr_search.sh
-│   │   └── one_dim_mse_launch_script.sh
-│   ├── mnist_arr.py
-│   ├── mnist_experiments
-│   │   ├── mnist_arr_log_s_sin_l.py
-│   │   ├── mnist_arr_sin_s_log_l.py
-│   │   ├── mnist_arr_sin_s_log_s.py
-│   │   ├── mnist_mae_log_s_sin_l.py
-│   │   ├── mnist_mae_lr_sensitivity.py
-│   │   ├── mnist_mae_sin_s_log_l.py
-│   │   ├── mnist_mae_sin_s_log_s.py
-│   │   ├── mnist_mse_log_s_sin_l.py
-│   │   ├── mnist_mse_sin_s_log_l.py
-│   │   └── mnist_mse_sin_s_log_s.py
-│   ├── mnist_mae.py
-│   ├── mnist_mse.py
-│   ├── one_dim_arr.py
-│   ├── one_dim_experiments
-│   │   ├── one_dim_arr_log_s_sin_l.py
-│   │   ├── one_dim_arr_sin_s_log_l.py
-│   │   ├── one_dim_arr_sin_s_log_s.py
-│   │   ├── one_dim_mae_log_s_sin_l.py
-│   │   ├── one_dim_mae_sin_s_log_l.py
-│   │   ├── one_dim_mae_sin_s_log_s.py
-│   │   ├── one_dim_mse_log_s_sin_l.py
-│   │   ├── one_dim_mse_sin_s_log_l.py
-│   │   └── one_dim_mse_sin_s_log_s.py
-│   ├── one_dim_mse.py
-│   └── test_transformer.py
+│   └── single_target_multi_distribution_experiments
+│       ├── mnist_arr_sin_log.py
+│       ├── mnist_mse_mae_sin_log.py
+│       ├── one_dim_one_target_arr_sin_log.py
+│       └── one_dim_one_target_mse_mae_sin_log.py
 ├── LICENSE
 ├── README.md
-├── results
-│   ├── monitor_training.ipynb
-│   └── result_logging
 ├── src
 │   ├── datasets
 │   │   ├── MNISTDataSet.py
+│   │   ├── MNISTMultiDistributionSingleTarget.py
 │   │   ├── OneDimDataSet.py
+│   │   ├── OneDimMultiDistributionSingleTarget.py
 │   │   ├── ReviewDataSet.py
 │   │   └── TestTransformerDataSet.py
 │   ├── models
