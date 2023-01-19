@@ -1,4 +1,4 @@
-# Deep Autoregressive Regression
+# Neural Regression For Scale-Varying Targets
 Adam Khakhar and Jacob Buckman\
 [Paper](https://arxiv.org/abs/2211.07447)\
 Citation Information:
@@ -12,7 +12,7 @@ Citation Information:
   
   keywords = {Machine Learning (cs.LG), FOS: Computer and information sciences, FOS: Computer and information sciences},
   
-  title = {Deep Autoregressive Regression},
+  title = {Neural Regression For Scale-Varying Targets},
   
   publisher = {arXiv},
   
